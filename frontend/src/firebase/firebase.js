@@ -1,8 +1,13 @@
 import { initializeApp } from "firebase/app";
 
+const firebaseApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+
+if (!firebaseApiKey) {
+  console.warn("Missing VITE_FIREBASE_API_KEY. Set it in frontend/.env.local or your deployment environment.");
+}
+
 const firebaseConfig = {
-  apiKey:
-    import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC10olsPdF-daALUWBacq_OKOmmFtt3KAo",
+  apiKey: firebaseApiKey || "",
   authDomain:
     import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "getrespondr-itmo.firebaseapp.com",
   projectId:
