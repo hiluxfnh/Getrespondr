@@ -43,17 +43,13 @@ export default function Topbar() {
       title: "Volunteers",
       subtitle: "Volunteer availability and deployment",
     },
-    "/analytics": {
-      title: "Analytics",
-      subtitle: "Performance and response trends",
+    "/profile": {
+      title: "Profile",
+      subtitle: "Your account information and access details",
     },
     "/notifications": {
       title: "Notifications",
       subtitle: "Alerts and operational updates",
-    },
-    "/reports": {
-      title: "Reports",
-      subtitle: "Incident summaries and exports",
     },
     "/messages": {
       title: "Messages",
@@ -62,7 +58,7 @@ export default function Topbar() {
     "/settings": {
       title: "Settings",
       subtitle: "Configure the coordination workspace",
-    },
+    }
   };
 
   const activePage = pageMeta[pathname] ?? pageMeta["/"];

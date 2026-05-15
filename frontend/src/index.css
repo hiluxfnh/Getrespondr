@@ -149,4 +149,57 @@
 		border: 2px solid rgba(37, 99, 235, 0.2);
 		animation: map-pulse 2.2s infinite ease-out;
 	}
+
+	/* Global font size reduction by 25% */
+	.text-xs {
+		font-size: 0.6875rem !important;
+	}
+
+	.text-sm {
+		font-size: 0.8125rem !important;
+	}
+
+	.text-base {
+		font-size: 0.75rem !important;
+	}
+
+	.text-lg {
+		font-size: 1rem !important;
+	}
+
+	.text-xl {
+		font-size: 1.1875rem !important;
+	}
+
+	.text-2xl {
+		font-size: 1.5rem !important;
+	}
+
+	.text-3xl {
+		font-size: 1.875rem !important;
+	}
+
+	.text-4xl {
+		font-size: 2.25rem !important;
+	}
+
+	.text-5xl {
+		font-size: 3rem !important;
+	}
+
+	.text-6xl {
+		font-size: 3.75rem !important;
+	}
+
+	.text-7xl {
+		font-size: 4.375rem !important;
+	}
+
+	.text-8xl {
+		font-size: 5.625rem !important;
+	}
+
+	.text-9xl {
+		font-size: 7.5rem !important;
+	}
 }

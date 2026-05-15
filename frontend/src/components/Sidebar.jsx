@@ -4,11 +4,9 @@ import {
   Map,
   ClipboardList,
   Package,
-  BarChart3,
   Bell,
   Settings,
   Users,
-  FileText,
   MessagesSquare,
 } from "lucide-react";
 
@@ -54,22 +52,10 @@ const menuItems = [
   },
 
   {
-    icon: BarChart3,
-    label: "Analytics",
-    path: "/analytics",
-  },
-
-  {
     icon: Bell,
     label: "Notifications",
     path: "/notifications",
     badge: 12,
-  },
-
-  {
-    icon: FileText,
-    label: "Reports",
-    path: "/reports",
   },
 
   {
@@ -127,7 +113,10 @@ export default function Sidebar() {
       </div>
 
       <div className="p-4 border-t border-white/10">
-        <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-3">
+        <NavLink
+          to="/profile"
+          className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-3 transition hover:bg-white/10"
+        >
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="h-12 w-12 rounded-full bg-gradient-to-br from-amber-200 via-orange-200 to-amber-400 p-[2px]">
@@ -150,7 +139,7 @@ export default function Sidebar() {
           </div>
 
           <Settings size={18} className="text-white/70" />
-        </div>
+        </NavLink>
       </div>
     </div>
   );

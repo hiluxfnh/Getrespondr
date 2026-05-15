@@ -10,10 +10,12 @@ import Incidents from "../pages/Incidents";
 import LiveMapPage from "../pages/LiveMapPage";
 import Tasks from "../pages/Tasks";
 import Resources from "../pages/Resources";
+import Volunteers from "../pages/Volunteers";
 import DashboardLayout from "../layouts/DashboardLayout";
-import Analytics from "../pages/Analytics";
 import Notifications from "../pages/Notifications";
+import Messages from "../pages/Messages";
 import Settings from "../pages/Settings";
+import SettingsPage from "../pages/SettingsPage";
 import IncidentDetails from "../pages/IncidentDetails";
 
 function PlaceholderPage({ title, description }) {
@@ -63,47 +65,39 @@ export default function AppRoutes() {
 
         <Route
           path="/volunteers"
-          element={
-            <PlaceholderPage
-              title="Volunteers"
-              description="Volunteer coordination and availability tracking will live here."
-            />
-          }
-        />
-
-        <Route
-          path="/analytics"
-          element={<Analytics />}
+          element={<Volunteers />}
         />
 
         <Route
           path="/notifications"
-          element={<Notifications />}
-        />
-
-        <Route
-          path="/reports"
           element={
-            <PlaceholderPage
-              title="Reports"
-              description="Incident reports, summaries, and exports will live here."
-            />
+            <DashboardLayout>
+              <Notifications />
+            </DashboardLayout>
           }
         />
 
         <Route
           path="/messages"
           element={
-            <PlaceholderPage
-              title="Messages"
-              description="Team messages and coordination chat will live here."
-            />
+            <DashboardLayout>
+              <Messages />
+            </DashboardLayout>
           }
         />
 
         <Route
-          path="/settings"
+          path="/profile"
           element={<Settings />}
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <DashboardLayout>
+              <SettingsPage />
+            </DashboardLayout>
+          }
         />
 
         <Route
