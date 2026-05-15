@@ -63,78 +63,156 @@
 		position: relative;
 		display: grid;
 		place-items: center;
-		width: 48px;
-		height: 62px;
+		width: var(--map-pin-width, 64px);
+		height: var(--map-pin-height, 80px);
 		color: #fff;
 	}
 
-	.map-pin::before {
-		content: "";
+	.map-pin__glow {
 		position: absolute;
-		inset: 7px 9px 10px;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
 		border-radius: 9999px;
-		background: currentColor;
-		opacity: 0.22;
-		filter: blur(12px);
+		pointer-events: none;
 	}
 
-	.map-pin--pulse::after {
-		content: "";
-		position: absolute;
-		inset: 4px;
-		border-radius: 9999px;
-		border: 2px solid currentColor;
-		opacity: 0;
-		animation: map-pulse 1.9s infinite ease-out;
+	.map-pin__glow--outer {
+		width: calc(52px * var(--map-pin-scale, 1));
+		height: calc(52px * var(--map-pin-scale, 1));
+		background: transparent;
+		box-shadow: 0 0 0 calc(10px * var(--map-pin-scale, 1)) color-mix(in srgb, currentColor 18%, transparent);
+		opacity: 0.9;
 	}
 
-	.map-pin__core {
+	.map-pin__glow--mid {
+		width: calc(38px * var(--map-pin-scale, 1));
+		height: calc(38px * var(--map-pin-scale, 1));
+		background: transparent;
+		box-shadow: 0 0 0 calc(7px * var(--map-pin-scale, 1)) color-mix(in srgb, currentColor 26%, transparent);
+		opacity: 0.95;
+	}
+
+	.map-pin__glow--inner {
+		width: calc(24px * var(--map-pin-scale, 1));
+		height: calc(24px * var(--map-pin-scale, 1));
+		background: transparent;
+		box-shadow: 0 0 0 calc(4px * var(--map-pin-scale, 1)) color-mix(in srgb, currentColor 34%, transparent);
+		opacity: 0.95;
+	}
+
+	.map-pin--pulse .map-pin__glow--outer {
+		animation: map-pulse 2.2s infinite ease-out;
+	}
+
+	.map-pin--pulse .map-pin__glow--mid {
+		animation: map-pulse 2.2s infinite ease-out 0.18s;
+	}
+
+	.map-pin--pulse .map-pin__glow--inner {
+		animation: map-pulse 2.2s infinite ease-out 0.36s;
+	}
+
+	.map-pin__shape {
 		position: relative;
-		z-index: 1;
+		z-index: 10;
 		display: grid;
-		place-items: center;
-		width: 38px;
-		height: 38px;
-		border-radius: 9999px;
-		box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
+		width: calc(48px * var(--map-pin-scale, 1));
+		height: calc(48px * var(--map-pin-scale, 1));
+		border-radius: 50% 50% 50% 8px;
+		box-shadow: 0 6px 14px rgba(0, 0, 0, 0.24), 0 0 0 1.5px rgba(255, 255, 255, 0.44);
 		animation: map-twinkle 2.2s infinite ease-in-out;
 	}
 
-	.map-pin--critical .map-pin__core {
-		background: linear-gradient(180deg, #ff6b6b, #dc2626);
+	.map-pin__core {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 100%;
 	}
 
-	.map-pin--high .map-pin__core {
-		background: linear-gradient(180deg, #f59e0b, #ea580c);
+	.map-pin--critical .map-pin__shape {
+		background: linear-gradient(135deg, #ff5252, #d32f2f);
 	}
 
-	.map-pin--medium .map-pin__core {
-		background: linear-gradient(180deg, #fbbf24, #d97706);
+	.map-pin--critical .map-pin__glow--outer,
+	.map-pin--critical .map-pin__glow--mid,
+	.map-pin--critical .map-pin__glow--inner {
+		background: #ff1744;
 	}
 
-	.map-pin--team .map-pin__core {
-		background: linear-gradient(180deg, #60a5fa, #2563eb);
+	.map-pin--high .map-pin__shape {
+		background: linear-gradient(135deg, #ffb74d, #f57c00);
 	}
 
-	.map-pin--resource .map-pin__core {
-		background: linear-gradient(180deg, #34d399, #059669);
+	.map-pin--high .map-pin__glow--outer,
+	.map-pin--high .map-pin__glow--mid,
+	.map-pin--high .map-pin__glow--inner {
+		background: #ff9800;
 	}
 
-	.map-pin--shelter .map-pin__core {
-		background: linear-gradient(180deg, #a78bfa, #7c3aed);
+	.map-pin--medium .map-pin__shape {
+		background: linear-gradient(135deg, #ffeb3b, #fbc02d);
+	}
+
+	.map-pin--medium .map-pin__glow--outer,
+	.map-pin--medium .map-pin__glow--mid,
+	.map-pin--medium .map-pin__glow--inner {
+		background: #ffb300;
+	}
+
+	.map-pin--team .map-pin__shape {
+		background: linear-gradient(135deg, #64b5f6, #1976d2);
+	}
+
+	.map-pin--team .map-pin__glow--outer,
+	.map-pin--team .map-pin__glow--mid,
+	.map-pin--team .map-pin__glow--inner {
+		background: #2196f3;
+	}
+
+	.map-pin--resource .map-pin__shape {
+		background: linear-gradient(135deg, #4ade80, #16a34a);
+	}
+
+	.map-pin--resource .map-pin__glow--outer,
+	.map-pin--resource .map-pin__glow--mid,
+	.map-pin--resource .map-pin__glow--inner {
+		background: #22c55e;
+	}
+
+	.map-pin--shelter .map-pin__shape {
+		background: linear-gradient(135deg, #ba68c8, #8e24aa);
+	}
+
+	.map-pin--shelter .map-pin__glow--outer,
+	.map-pin--shelter .map-pin__glow--mid,
+	.map-pin--shelter .map-pin__glow--inner {
+		background: #ab47bc;
 	}
 
 	.map-cluster {
+		position: relative;
 		display: grid;
 		place-items: center;
-		width: 40px;
-		height: 40px;
+		width: var(--map-cluster-size, 40px);
+		height: var(--map-cluster-size, 40px);
 		border-radius: 9999px;
 		background: linear-gradient(180deg, #60a5fa, #2563eb);
 		color: #fff;
 		font-size: 0.875rem;
 		font-weight: 700;
-		box-shadow: 0 12px 28px rgba(37, 99, 235, 0.32);
+		box-shadow: 0 8px 18px rgba(37, 99, 235, 0.26);
+	}
+
+	.map-cluster--blue {
+		background: linear-gradient(180deg, #3b82f6, #2563eb);
+		box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+	}
+
+	.map-cluster--green {
+		background: linear-gradient(180deg, #4ade80, #16a34a);
+		box-shadow: 0 8px 18px rgba(22, 163, 74, 0.24);
 	}
 
 	.map-cluster--pulse {
@@ -144,10 +222,14 @@
 	.map-cluster::after {
 		content: "";
 		position: absolute;
-		inset: -6px;
+		inset: -4px;
 		border-radius: 9999px;
-		border: 2px solid rgba(37, 99, 235, 0.2);
+		border: 1.5px solid rgba(37, 99, 235, 0.16);
 		animation: map-pulse 2.2s infinite ease-out;
+	}
+
+	.map-cluster--green::after {
+		border-color: rgba(34, 197, 94, 0.18);
 	}
 
 	/* Global font size reduction by 25% */

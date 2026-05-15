@@ -1,5 +1,6 @@
 import {
   Bell,
+  House,
   MessageCircle,
   Search,
   Menu,
@@ -8,6 +9,7 @@ import {
 } from "lucide-react";
 
 import {
+  Link,
   useLocation,
 } from "react-router-dom";
 
@@ -30,6 +32,10 @@ export default function Topbar() {
     "/incidents": {
       title: "Incidents",
       subtitle: "Manage and review active events",
+    },
+    "/incidents/:id": {
+      title: "Incident Details",
+      subtitle: "Review the full incident record and response status",
     },
     "/tasks": {
       title: "Tasks",
@@ -61,7 +67,9 @@ export default function Topbar() {
     }
   };
 
-  const activePage = pageMeta[pathname] ?? pageMeta["/"];
+  const activePage = pathname.startsWith("/incidents/")
+    ? pageMeta["/incidents/:id"]
+    : pageMeta[pathname] ?? pageMeta["/"];
   const showSearch = pathname !== "/live-map";
 
   return (
@@ -79,6 +87,14 @@ export default function Topbar() {
       </div>
 
       <div className="flex items-center gap-4">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          <House size={16} className="text-slate-500" />
+          Landing Page
+        </Link>
+
         {showSearch && (
           <div className="bg-slate-100 px-4 py-2.5 rounded-xl flex items-center gap-2 w-80">
             <Search size={18} className="text-slate-400" />

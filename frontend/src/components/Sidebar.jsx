@@ -74,7 +74,7 @@ const menuItems = [
 export default function Sidebar() {
   return (
     <div className="fixed left-0 top-0 z-50 w-64 h-screen bg-[#071936] text-white flex flex-col shadow-[18px_0_40px_rgba(2,6,23,0.35)]">
-      <div className="p-6 text-2xl font-bold border-b border-white/10 flex items-center gap-3">
+      <NavLink to="/" className="p-6 text-2xl font-bold border-b border-white/10 flex items-center gap-3 hover:opacity-95">
         <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/5">
           <span className="text-sm font-black">+</span>
         </div>
@@ -82,7 +82,7 @@ export default function Sidebar() {
         <span className="text-[1.7rem] tracking-tight">
           Get<span className="text-blue-400">Respondr</span>
         </span>
-      </div>
+      </NavLink>
 
       <div className="flex-1 px-4 py-5 space-y-2 overflow-y-auto">
         {menuItems.map((item, index) => (

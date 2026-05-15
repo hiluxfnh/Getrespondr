@@ -5,29 +5,48 @@ import StatusBadge from "../components/StatusBadge";
 
 import {
   ArrowLeft,
+  House,
   Users,
   Clock,
   ShieldAlert,
 } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function IncidentDetails() {
 
   const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/incidents");
+  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
 
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-600 hover:text-black transition"
-        >
-          <ArrowLeft size={18} />
+        <div className="flex items-center justify-between gap-4">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 text-slate-600 hover:text-black transition"
+          >
+            <ArrowLeft size={18} />
 
-          Back
-        </button>
+            Back to incidents
+          </button>
+
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            <House size={16} />
+            Landing Page
+          </Link>
+        </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-8">
 
