@@ -5,6 +5,8 @@ import {
 } from "react-router-dom";
 
 import LandingPage from "../pages/LandingPage";
+import Login from "../pages/Login";
+import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import Incidents from "../pages/Incidents";
 import LiveMapPage from "../pages/LiveMapPage";
@@ -17,6 +19,8 @@ import Messages from "../pages/Messages";
 import Settings from "../pages/Settings";
 import SettingsPage from "../pages/SettingsPage";
 import IncidentDetails from "../pages/IncidentDetails";
+import Profile from "../pages/Profile";
+import { ProtectedRoute } from "../firebase/auth";
 
 function PlaceholderPage({ title, description }) {
   return (
@@ -38,35 +42,20 @@ export default function AppRoutes() {
           element={<LandingPage />}
         />
 
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-        <Route
-          path="/incidents"
-          element={<Incidents />}
-        />
+        <Route path="/dashboard" element={<Dashboard />} />
 
-        <Route
-          path="/live-map"
-          element={<LiveMapPage />}
-        />
+        <Route path="/incidents" element={<Incidents />} />
 
-        <Route
-          path="/tasks"
-          element={<Tasks />}
-        />
+        <Route path="/live-map" element={<LiveMapPage />} />
 
-        <Route
-          path="/resources"
-          element={<Resources />}
-        />
+        <Route path="/tasks" element={<Tasks />} />
 
-        <Route
-          path="/volunteers"
-          element={<Volunteers />}
-        />
+        <Route path="/resources" element={<Resources />} />
+
+        <Route path="/volunteers" element={<Volunteers />} />
 
         <Route
           path="/notifications"
@@ -88,22 +77,25 @@ export default function AppRoutes() {
 
         <Route
           path="/profile"
-          element={<Settings />}
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="/settings"
           element={
-            <DashboardLayout>
-              <SettingsPage />
-            </DashboardLayout>
+            <ProtectedRoute>
+              <DashboardLayout>
+                <SettingsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
           }
         />
 
-        <Route
-          path="/incidents/:id"
-          element={<IncidentDetails />}
-        />
+        <Route path="/incidents/:id" element={<IncidentDetails />} />
       </Routes>
     </BrowserRouter>
   );

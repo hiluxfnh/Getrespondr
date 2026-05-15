@@ -142,16 +142,22 @@ export default function LandingPage() {
 
         <div className="flex items-center gap-3">
           <Link
-            to="/dashboard"
-            className="rounded-xl border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
+            to="/login"
+            className="rounded-xl border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/70"
           >
             Login
           </Link>
           <Link
-            to="/live-map"
-            className="rounded-xl bg-[#ff8a1f] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/30 transition hover:bg-[#ff9b3d]"
+            to="/register"
+            className="rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
           >
-            Get Started
+            Register
+          </Link>
+          <Link
+            to="/live-map"
+            className="rounded-xl bg-[#ff8a1f] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/30 transition hover:bg-[#ff9b3d] focus:outline-none focus:ring-2 focus:ring-orange-200/80"
+          >
+            Explore Public Map
           </Link>
         </div>
       </header>
@@ -178,9 +184,9 @@ export default function LandingPage() {
           <div className="mt-9 flex flex-wrap items-center gap-4">
             <Link
               to="/incidents"
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#ff8a1f] px-6 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(255,138,31,0.28)] transition hover:-translate-y-0.5 hover:bg-[#ff9b3d]"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#ff8a1f] px-6 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(255,138,31,0.28)] transition hover:-translate-y-0.5 hover:bg-[#ff9b3d] focus:outline-none focus:ring-2 focus:ring-orange-200/80"
             >
-              Report Incident
+              View Incidents
               <ArrowRight className="h-4 w-4" />
             </Link>
 

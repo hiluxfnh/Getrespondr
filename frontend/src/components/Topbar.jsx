@@ -1,11 +1,15 @@
 import {
   Bell,
   House,
+  LogIn,
   MessageCircle,
   Search,
   Menu,
   CloudRain,
   MapPin,
+  ShieldCheck,
+  Users,
+  UserCog,
 } from "lucide-react";
 
 import {
@@ -13,8 +17,16 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import { useEffect, useState } from "react";
+import { useAuth } from "../firebase/auth";
+import { listenToNotifications } from "../firebase/notifications";
+
 export default function Topbar() {
   const { pathname } = useLocation();
+  const { user, requestRole } = useAuth();
+  const [selectedRole, setSelectedRole] = useState("Volunteer");
+  const [requestMessage, setRequestMessage] = useState("");
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const pageMeta = {
     "/": {
@@ -71,50 +83,131 @@ export default function Topbar() {
     ? pageMeta["/incidents/:id"]
     : pageMeta[pathname] ?? pageMeta["/"];
   const showSearch = pathname !== "/live-map";
+  const showRoleRequest = Boolean(user) && pathname !== "/login" && pathname !== "/register";
+  const isPublicRoute = ["/", "/dashboard", "/incidents", "/live-map", "/tasks", "/resources", "/volunteers", "/notifications", "/messages"].some((route) =>
+    route === pathname || (route === "/incidents" && pathname.startsWith("/incidents/"))
+  );
+
+  const roleOptions = [
+    { value: "Volunteer", label: "Volunteer", icon: Users },
+    { value: "Responder", label: "Responder", icon: UserCog },
+    { value: "Coordinator", label: "Coordinator", icon: ShieldCheck },
+  ];
+
+  const handleRequestRole = async () => {
+    try {
+      setRequestMessage("");
+      const result = await requestRole(selectedRole);
+      if (result.status === "approved") {
+        setRequestMessage(`${selectedRole} access granted.`);
+      } else if (result.status === "pending") {
+        setRequestMessage("Coordinator request sent for super admin approval.");
+      } else {
+        setRequestMessage("You already have this access.");
+      }
+    } catch (error) {
+      setRequestMessage(error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) {
+      setNotificationCount(0);
+      return undefined;
+    }
+
+    const unsubscribe = listenToNotifications(user.role, (items) => {
+      setNotificationCount(items.length);
+    }, undefined, user.notificationPreferences || {});
+
+    return unsubscribe;
+  }, [user]);
 
   return (
-    <div className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-40">
-      <div className="flex items-center gap-4 flex-1">
-        <button className="p-2 hover:bg-slate-100 rounded-lg">
+    <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-40" role="banner">
+      <div className="flex min-w-0 items-center gap-4 flex-1">
+        <button
+          type="button"
+          aria-label="Open navigation menu"
+          className="p-2 hover:bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/70"
+        >
           <Menu size={20} className="text-slate-700" />
         </button>
 
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{activePage.title}</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-[1.45rem] font-bold leading-tight text-slate-900">{activePage.title}</h1>
 
-          <p className="text-slate-500 text-sm">{activePage.subtitle}</p>
+          <p className="truncate text-sm text-slate-500">{activePage.subtitle}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-3">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500/70"
         >
           <House size={16} className="text-slate-500" />
           Landing Page
         </Link>
 
+        {!user && isPublicRoute && (
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/70"
+          >
+            <LogIn size={16} />
+            Sign in
+          </Link>
+        )}
+
         {showSearch && (
-          <div className="bg-slate-100 px-4 py-2.5 rounded-xl flex items-center gap-2 w-80">
+          <label className="bg-slate-100 px-3.5 py-2 rounded-xl flex items-center gap-2 w-72 max-w-[32vw] focus-within:ring-2 focus-within:ring-sky-500/70">
             <Search size={18} className="text-slate-400" />
             <input
               type="text"
               placeholder="Search incidents, tasks, resources..."
-              className="bg-transparent outline-none flex-1 text-slate-700 placeholder:text-slate-400"
+              aria-label="Search incidents, tasks, and resources"
+              className="min-w-0 bg-transparent outline-none flex-1 text-sm text-slate-700 placeholder:text-slate-400"
             />
             <span className="text-xs text-slate-400 font-medium">⌘ K</span>
+          </label>
+        )}
+
+        {showRoleRequest && (
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 max-w-[360px]">
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/70"
+              aria-label="Request access role"
+            >
+              {roleOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleRequestRole}
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/70"
+            >
+              Request Access
+            </button>
+            {requestMessage ? (
+              <span className="w-full text-xs text-slate-500">{requestMessage}</span>
+            ) : null}
           </div>
         )}
 
-        <button className="relative p-2 hover:bg-slate-100 rounded-lg">
+        <button type="button" className="relative p-2 hover:bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/70" aria-label="Notifications">
           <Bell size={20} className="text-slate-600" />
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            5
-          </span>
+          {notificationCount > 0 ? (
+            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {notificationCount > 9 ? "9+" : notificationCount}
+            </span>
+          ) : null}
         </button>
 
-        <button className="relative p-2 hover:bg-slate-100 rounded-lg">
+        <button type="button" className="relative p-2 hover:bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/70" aria-label="Messages">
           <MessageCircle size={20} className="text-slate-600" />
           <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
             2
@@ -143,6 +236,6 @@ export default function Topbar() {
           </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

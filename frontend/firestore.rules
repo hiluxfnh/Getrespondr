@@ -1,0 +1,70 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userRole() {
+      return signedIn() && userDoc().data.role != null ? userDoc().data.role : "Viewer";
+    }
+
+    function isAdmin() {
+      return signedIn() && (userRole() == "Super Admin" || userRole() == "Coordinator");
+    }
+
+    function canWriteIncidents() {
+      return isAdmin() || userRole() == "Responder";
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /role_requests/{requestId} {
+      allow read: if signedIn() && (request.auth.uid == requestId || isAdmin());
+      allow create: if signedIn() && request.auth.uid == requestId;
+      allow update, delete: if isAdmin();
+    }
+
+    match /incidents/{incidentId} {
+      allow read: if true;
+      allow create, update, delete: if canWriteIncidents();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /resources/{resourceId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /volunteers/{volunteerId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /activity_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+  }
+}

@@ -284,4 +284,13 @@
 	.text-9xl {
 		font-size: 7.5rem !important;
 	}
+
+	.scrollbar-none {
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+
+	.scrollbar-none::-webkit-scrollbar {
+		display: none;
+	}
 }

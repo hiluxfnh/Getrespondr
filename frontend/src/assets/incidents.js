@@ -7,6 +7,15 @@ const incidents = [
     status: "Active",
     reportedBy: "Citizen Report",
     time: "5 mins ago",
+    category: "Flood",
+    source: "Human Report",
+    description: "Heavy flooding has affected several streets in the downtown region following intense rainfall over the past two hours.",
+    aiSummary: "Flood conditions are escalating in the downtown core. Immediate evacuation support may be required for low-lying streets.",
+    recommendedAction: "Deploy rescue boats, initiate evacuation warnings, and secure access roads.",
+    locationDetail: "Central District, Riverfront",
+    latitude: 40.7128,
+    longitude: -74.006,
+    images: [],
   },
 
   {
@@ -17,6 +26,15 @@ const incidents = [
     status: "Investigating",
     reportedBy: "AI Detection",
     time: "12 mins ago",
+    category: "Fire",
+    source: "AI External Report",
+    description: "A wildfire alert was detected near North Hills with a rapid rise in heat signatures.",
+    aiSummary: "Potential wildfire spread detected near a forested zone. Wind conditions could increase risk.",
+    recommendedAction: "Dispatch fire suppression units and monitor wind-driven spread.",
+    locationDetail: "North Hills",
+    latitude: 40.725,
+    longitude: -74.02,
+    images: [],
   },
 
   {
@@ -27,6 +45,15 @@ const incidents = [
     status: "Resolved",
     reportedBy: "Volunteer Team",
     time: "20 mins ago",
+    category: "Accident",
+    source: "Volunteer Report",
+    description: "A multi-vehicle road accident was cleared after emergency crews arrived.",
+    aiSummary: "Traffic disruption was localized and resolved with no ongoing hazard.",
+    recommendedAction: "Close the lane, clear debris, and verify no secondary incidents.",
+    locationDetail: "Highway A12",
+    latitude: 40.716,
+    longitude: -74.018,
+    images: [],
   },
 
   {
@@ -37,6 +64,15 @@ const incidents = [
     status: "Active",
     reportedBy: "Citizen Report",
     time: "30 mins ago",
+    category: "Medical",
+    source: "Citizen Report",
+    description: "A medical emergency was reported near West Zone with limited access to the site.",
+    aiSummary: "Immediate medical support is required and access should be cleared for responders.",
+    recommendedAction: "Send EMS, coordinate access support, and establish a triage point.",
+    locationDetail: "West Zone",
+    latitude: 40.719,
+    longitude: -74.011,
+    images: [],
   },
 ];
 

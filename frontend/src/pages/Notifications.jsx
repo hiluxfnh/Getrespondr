@@ -1,417 +1,294 @@
-import React, { useState } from 'react';
-import { Bell, AlertTriangle, CheckCircle2, Users, Package, MessageCircle, Settings, Search, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import {
+  Bell,
+  CheckCircle2,
+  Filter,
+  MessageCircle,
+  MoreVertical,
+  Package,
+  Search,
+  Settings2,
+  Sparkles,
+  TriangleAlert,
+  ShieldAlert,
+} from "lucide-react";
+
+import { useAuth } from "../firebase/auth";
+import { listenToNotifications } from "../firebase/notifications";
+
+const filterOptions = [
+  { id: "all", label: "All" },
+  { id: "unread", label: "Unread" },
+  { id: "incident", label: "Incidents" },
+  { id: "ai", label: "AI" },
+  { id: "system", label: "System" },
+];
+
+function formatTime(value) {
+  if (!value) return "Just now";
+  if (typeof value?.toDate === "function") return value.toDate().toLocaleString();
+  if (value instanceof Date) return value.toLocaleString();
+  return String(value);
+}
+
+function iconForNotification(notification) {
+  switch (notification.type) {
+    case "ai":
+      return Sparkles;
+    case "incident":
+      return TriangleAlert;
+    case "update":
+      return CheckCircle2;
+    case "system":
+      return Settings2;
+    case "message":
+      return MessageCircle;
+    case "resource":
+      return Package;
+    default:
+      return Bell;
+  }
+}
+
+function toneForNotification(notification) {
+  switch (notification.type) {
+    case "ai":
+      return { wrapper: "bg-violet-50 border-violet-200 text-violet-700", dot: "bg-violet-500" };
+    case "incident":
+      return { wrapper: "bg-red-50 border-red-200 text-red-700", dot: "bg-red-500" };
+    case "update":
+      return { wrapper: "bg-emerald-50 border-emerald-200 text-emerald-700", dot: "bg-emerald-500" };
+    case "system":
+      return { wrapper: "bg-slate-50 border-slate-200 text-slate-700", dot: "bg-slate-500" };
+    default:
+      return { wrapper: "bg-blue-50 border-blue-200 text-blue-700", dot: "bg-blue-500" };
+  }
+}
+
+function StatPill({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-left backdrop-blur">
+      <p className="text-xs uppercase tracking-[0.18em] text-white/60">{label}</p>
+      <p className="mt-1 text-xl font-bold">{value}</p>
+    </div>
+  );
+}
 
 export default function Notifications() {
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dismissedIds, setDismissedIds] = useState([]);
 
-  const notificationTypes = [
-    { id: 'all', label: 'All Notifications', count: 128, color: 'text-blue-600' },
-    { id: 'unread', label: 'Unread', count: 3, color: 'text-red-600' },
-    { id: 'incidents', label: 'Incidents', count: 45, color: 'text-slate-600' },
-    { id: 'tasks', label: 'Tasks', count: 28, color: 'text-slate-600' },
-    { id: 'system', label: 'System', count: 22, color: 'text-slate-600' },
-    { id: 'mentions', label: 'Mentions', count: 10, color: 'text-slate-600' },
-  ];
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      setNotifications([]);
+      return undefined;
+    }
 
-  const notifications = [
-    {
-      id: 1,
-      type: 'incident',
-      title: 'New incident reported: Flooding in Downtown',
-      description: 'A new Critical incident has been reported in Central District.',
-      timeAgo: '2 min ago',
-      icon: AlertTriangle,
-      iconBg: 'bg-red-100',
-      iconColor: 'text-red-600',
-      unread: true,
-    },
-    {
-      id: 2,
-      type: 'incident',
-      title: 'Team Alpha assigned to incident',
-      description: 'You have been assigned to "Flooding in Downtown" incident.',
-      timeAgo: '5 min ago',
-      icon: Users,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      unread: true,
-    },
-    {
-      id: 3,
-      type: 'task',
-      title: 'Task completed: Initial damage assessment',
-      description: 'Task has been marked as completed by Team Bravo.',
-      timeAgo: '15 min ago',
-      icon: CheckCircle2,
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-      unread: false,
-    },
-    {
-      id: 4,
-      type: 'incident',
-      title: 'High severity alert: Building Collapse',
-      description: 'Incident severity updated to High in North Hills area.',
-      timeAgo: '20 min ago',
-      icon: AlertTriangle,
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-600',
-      unread: true,
-    },
-    {
-      id: 5,
-      type: 'resource',
-      title: 'New resources available',
-      description: '12 Medical Kits are now available in Warehouse 1.',
-      timeAgo: '25 min ago',
-      icon: Package,
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-      unread: false,
-    },
-    {
-      id: 6,
-      type: 'mention',
-      title: 'You were mentioned in a comment',
-      description: 'Team Charlie mentioned you in a task comment.',
-      timeAgo: '35 min ago',
-      icon: MessageCircle,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
-      unread: false,
-    },
-    {
-      id: 7,
-      type: 'system',
-      title: 'System maintenance scheduled',
-      description: 'Scheduled maintenance on May 18, 2024 at 02:00 AM.',
-      timeAgo: '1h ago',
-      icon: Settings,
-      iconBg: 'bg-slate-100',
-      iconColor: 'text-slate-600',
-      unread: false,
-    },
-    {
-      id: 8,
-      type: 'resource',
-      title: 'Resource request fulfilled',
-      description: 'Your request for Rescue Boats has been approved.',
-      timeAgo: '2h ago',
-      icon: Package,
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-      unread: false,
-    },
-    {
-      id: 9,
-      type: 'alert',
-      title: 'Low stock alert: Blankets',
-      description: 'Blankets stock is running low in Warehouse 3.',
-      timeAgo: '3h ago',
-      icon: AlertTriangle,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
-      unread: false,
-    },
-    {
-      id: 10,
-      type: 'incident',
-      title: 'Incident resolved: Power Outage',
-      description: 'Power Outage in East Sector has been marked as resolved.',
-      timeAgo: '4h ago',
-      icon: CheckCircle2,
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-      unread: false,
-    },
-  ];
+    setLoading(true);
+    const unsubscribe = listenToNotifications(user.role, (items) => {
+      setNotifications(items);
+      setLoading(false);
+      setError("");
+    }, (err) => {
+      setError(err.message);
+      setLoading(false);
+    }, user.notificationPreferences || {});
 
-  const NotificationSummaryChart = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-32">
-      <circle cx="50" cy="50" r="45" fill="#ef4444" opacity="0.7" />
-      <circle cx="50" cy="50" r="42" fill="#ef4444" />
-      <circle cx="50" cy="50" r="38" fill="url(#pieGradient)" strokeDasharray="53 100" strokeDashoffset="0" stroke="none" />
-      <circle cx="50" cy="50" r="33" fill="white" />
-      <defs>
-        <linearGradient id="pieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ef4444" />
-          <stop offset="30%" stopColor="#3b82f6" />
-          <stop offset="55%" stopColor="#10b981" />
-          <stop offset="75%" stopColor="#f59e0b" />
-          <stop offset="90%" stopColor="#a855f7" />
-        </linearGradient>
-      </defs>
-      <text x="50" y="55" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#1e293b">128</text>
-      <text x="50" y="68" textAnchor="middle" fontSize="10" fill="#64748b">Total</text>
-    </svg>
-  );
+    return unsubscribe;
+  }, [user]);
 
-  const ToggleSwitch = ({ name, checked, onChange }) => (
-    <label className="relative inline-flex items-center cursor-pointer">
-      <input
-        type="checkbox"
-        name={name}
-        checked={checked}
-        onChange={onChange}
-        className="sr-only peer"
-      />
-      <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-    </label>
-  );
+  const unreadCount = notifications.filter((item) => !dismissedIds.includes(item.id)).length;
+  const stats = useMemo(() => ({
+    total: notifications.length,
+    incident: notifications.filter((item) => item.type === "incident").length,
+    ai: notifications.filter((item) => item.type === "ai").length,
+    system: notifications.filter((item) => item.type === "system").length,
+    unread: unreadCount,
+  }), [notifications, unreadCount]);
+
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter((notification) => {
+      const searchable = `${notification.title} ${notification.description} ${notification.incidentTitle}`.toLowerCase();
+      const matchesSearch = searchable.includes(searchQuery.toLowerCase());
+      const matchesFilter =
+        activeFilter === "all" ||
+        (activeFilter === "unread" && !dismissedIds.includes(notification.id)) ||
+        notification.type === activeFilter;
+
+      return matchesSearch && matchesFilter && !dismissedIds.includes(notification.id);
+    });
+  }, [notifications, searchQuery, activeFilter, dismissedIds]);
+
+  const markAllRead = () => setDismissedIds(notifications.map((item) => item.id));
+  const markAsRead = (id) => setDismissedIds((current) => (current.includes(id) ? current : [...current, id]));
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <div className="flex items-center gap-3">
-            <Bell className="w-8 h-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Notifications</h1>
-              <p className="text-slate-600 text-sm mt-1">Stay updated with real-time alerts and system notifications</p>
+    <div className="space-y-6">
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="bg-[linear-gradient(135deg,#071d40_0%,#12305d_45%,#0ea5e9_100%)] px-6 py-7 text-white sm:px-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10 backdrop-blur">
+                <Bell className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">Realtime Alerts</p>
+                <h1 className="mt-1 text-3xl font-bold">Notifications</h1>
+                <p className="mt-2 text-sm text-white/75">Incident alerts, AI findings, and system updates stream here in realtime.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatPill label="Total" value={stats.total} />
+              <StatPill label="Unread" value={stats.unread} />
+              <StatPill label="Incidents" value={stats.incident} />
+              <StatPill label="AI" value={stats.ai} />
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        <div className="grid grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="col-span-3">
-            <div className="bg-white rounded-lg shadow border border-slate-200 p-6 mb-6">
-              {/* Search and Controls */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search notifications..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                  />
+        <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.6fr)_360px] sm:px-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search alerts, incidents, and AI notes"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={markAllRead}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Mark all read
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </button>
+                <button type="button" className="rounded-xl border border-slate-200 bg-white p-3 text-slate-600 transition hover:bg-slate-50">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setActiveFilter(filter.id)}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    activeFilter === filter.id
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+
+            {error ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            ) : null}
+
+            <div className="space-y-4">
+              {loading ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+                  Loading notifications...
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-medium">
-                  All Types <ChevronRight className="w-4 h-4" />
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium">
-                  Mark all as read
-                </button>
-                <button className="p-2 hover:bg-slate-100 rounded-lg">
-                  <MoreVertical className="w-4 h-4 text-slate-600" />
-                </button>
-              </div>
+              ) : filteredNotifications.length ? (
+                filteredNotifications.map((notification) => {
+                  const Icon = iconForNotification(notification);
+                  const tone = toneForNotification(notification);
 
-              {/* Filter Tabs */}
-              <div className="flex gap-6 border-b border-slate-200 pb-4 mb-6 overflow-x-auto">
-                {notificationTypes.map(type => (
-                  <button
-                    key={type.id}
-                    onClick={() => setActiveFilter(type.id)}
-                    className={`whitespace-nowrap pb-2 text-sm font-medium transition-colors ${
-                      activeFilter === type.id
-                        ? `text-blue-600 border-b-2 border-blue-600`
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {type.label} <span className={`ml-1 ${type.color}`}>{type.count}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Notifications List */}
-              <div className="space-y-4">
-                {notifications.map(notif => {
-                  const IconComponent = notif.icon;
                   return (
-                    <div
-                      key={notif.id}
-                      className={`p-4 rounded-lg border transition-all cursor-pointer hover:shadow-md ${
-                        notif.unread
-                          ? 'bg-blue-50 border-blue-200'
-                          : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                      }`}
+                    <button
+                      key={notification.id}
+                      type="button"
+                      onClick={() => markAsRead(notification.id)}
+                      className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                     >
                       <div className="flex gap-4">
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${notif.iconBg}`}>
-                          <IconComponent className={`w-5 h-5 ${notif.iconColor}`} />
+                        <div className={`grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl border ${tone.wrapper}`}>
+                          <Icon className="h-5 w-5" />
                         </div>
-                        <div className="flex-1 min-w-0">
+
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <h3 className="font-semibold text-slate-900">{notif.title}</h3>
-                              <p className="text-slate-600 text-sm mt-1">{notif.description}</p>
+                              <h3 className="font-semibold text-slate-900">{notification.title}</h3>
+                              <p className="mt-1 text-sm leading-6 text-slate-600">{notification.description}</p>
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className="text-xs text-slate-500">{notif.timeAgo}</span>
-                              {notif.unread && <div className="w-2 h-2 rounded-full bg-blue-600"></div>}
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                              <span>{formatTime(notification.createdAt)}</span>
+                              <span className={`h-2.5 w-2.5 rounded-full ${tone.dot}`} />
                             </div>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{notification.type}</span>
+                            {notification.incidentTitle ? (
+                              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{notification.incidentTitle}</span>
+                            ) : null}
+                            {notification.severity ? (
+                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">{notification.severity}</span>
+                            ) : null}
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   );
-                })}
-              </div>
-
-              {/* Pagination */}
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200">
-                <p className="text-sm text-slate-600">Showing 1 to 10 of 128 notifications</p>
-                <div className="flex items-center gap-2">
-                  <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50">
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, '...', 13].map((num, idx) => (
-                      <button
-                        key={idx}
-                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                          num === 1
-                            ? 'bg-blue-600 text-white'
-                            : 'border border-slate-300 hover:bg-slate-50'
-                        }`}
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                  <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50">
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                  <select className="ml-4 px-3 py-1 border border-slate-300 rounded-lg text-sm">
-                    <option>10</option>
-                    <option>25</option>
-                    <option>50</option>
-                  </select>
+                })
+              ) : (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  <Bell className="mx-auto h-10 w-10 text-slate-300" />
+                  <p className="mt-4 text-lg font-semibold text-slate-900">No notifications right now</p>
+                  <p className="mt-2 text-sm text-slate-500">New incident alerts and AI results will appear here automatically.</p>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="col-span-1 space-y-6">
-            {/* Notification Summary */}
-            <div className="bg-white rounded-lg shadow border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">Notification Summary</h3>
-              <div className="mb-4">
-                <NotificationSummaryChart />
-              </div>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-slate-700">Incidents</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">45 (35%)</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <span className="text-slate-700">Tasks</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">28 (22%)</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span className="text-slate-700">System</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">22 (17%)</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                    <span className="text-slate-700">Mentions</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">10 (8%)</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                    <span className="text-slate-700">Other</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">23 (18%)</span>
-                </div>
+          <aside className="space-y-5">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900">Delivery Scope</h3>
+              <div className="mt-4 space-y-3 text-sm text-slate-600">
+                <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-red-500" /> Incident alerts go to responders and coordinators.</p>
+                <p className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-violet-500" /> AI duplicate matches and severity suggestions are included automatically.</p>
+                <p className="flex items-center gap-2"><Settings2 className="h-4 w-4 text-slate-500" /> System notices can be added alongside incident updates.</p>
               </div>
             </div>
 
-            {/* Quick Filters */}
-            <div className="bg-white rounded-lg shadow border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">Quick Filters</h3>
-              <div className="space-y-3">
-                <button className="w-full flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm text-slate-700">Unread</span>
-                  </div>
-                  <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-semibold">3</span>
-                </button>
-                <button className="w-full flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm text-slate-700">High Priority</span>
-                  </div>
-                  <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold">12</span>
-                </button>
-                <button className="w-full flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm text-slate-700">Mentions</span>
-                  </div>
-                  <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold">10</span>
-                </button>
-                <button className="w-full flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm text-slate-700">Incidents</span>
-                  </div>
-                  <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold">45</span>
-                </button>
-              </div>
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900">Realtime Feed</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                This feed listens directly to the Firestore notifications collection, so alerts update without refreshing the page.
+              </p>
             </div>
-
-            {/* Notification Settings */}
-            <div className="bg-white rounded-lg shadow border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">Notification Settings</h3>
-              <p className="text-slate-600 text-xs mb-4">Manage how you receive notifications</p>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm text-slate-700">Email Notifications</span>
-                  </div>
-                  <ToggleSwitch name="email" checked={true} onChange={() => {}} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm text-slate-700">Push Notifications</span>
-                  </div>
-                  <ToggleSwitch name="push" checked={true} onChange={() => {}} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm text-slate-700">SMS Alerts</span>
-                  </div>
-                  <ToggleSwitch name="sms" checked={false} onChange={() => {}} />
-                </div>
-              </div>
-              <button className="w-full mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium py-2">
-                Manage Preferences →
-              </button>
-            </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>
   );
 }
-
-const Mail = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <rect width="20" height="16" x="2" y="4" rx="2" />
-    <path d="m22 7-10 5L2 7" />
-  </svg>
-);

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import StatCard from "../components/StatCard";
 import LiveMap from "../components/LiveMap";
@@ -11,55 +12,72 @@ import {
   TrendingUp,
   CheckCircle,
 } from "lucide-react";
+import { listenToDashboardStats } from "../firebase/dashboardStats";
 
 export default function Dashboard() {
+  const [stats, setStats] = useState({
+    totalIncidents: 0,
+    activeIncidents: 0,
+    criticalIncidents: 0,
+    resolvedIncidents: 0,
+    allIncidents: [],
+  });
+
+  useEffect(() => {
+    const unsubscribe = listenToDashboardStats((newStats) => {
+      setStats(newStats);
+    });
+
+    return unsubscribe;
+  }, []);
+
   return (
     <DashboardLayout>
       {/* Stats Cards */}
       <div className="grid grid-cols-5 gap-4 mb-8">
         <StatCard
           title="Active Incidents"
-          value="1,248"
+          value={stats.activeIncidents.toString()}
           color="text-red-500"
           icon={AlertTriangle}
-          trend="+ 12"
-          trendLabel="today"
+          trend={`${stats.criticalIncidents} critical`}
+          trendLabel="ongoing"
         />
 
         <StatCard
-          title="Volunteers Online"
-          value="5,432"
+          title="Total Incidents"
+          value={stats.totalIncidents.toString()}
           color="text-blue-500"
-          icon={Users}
-          trend="↑ 8%"
-          trendLabel="from yesterday"
+          icon={AlertTriangle}
+          trend={`${stats.resolvedIncidents} resolved`}
+          trendLabel="overall"
         />
 
         <StatCard
-          title="Pending Tasks"
-          value="684"
+          title="Critical Alerts"
+          value={stats.criticalIncidents.toString()}
           color="text-orange-500"
           icon={CheckCircle}
-          trend="↑ 24"
-          trendLabel="today"
+          trend="highest priority"
+          trendLabel="immediate action"
         />
 
         <StatCard
-          title="Resources Available"
-          value="812"
-          color="text-green-500"
-          icon={Package}
-          trend="↑ 16"
-          trendLabel="today"
+          title="Response Status"
+          value={stats.activeIncidents > 0 ? "Active" : "Clear"}
+          color={stats.activeIncidents > 0 ? "text-red-500" : "text-green-500"}
+          icon={TrendingUp}
+          trend={stats.activeIncidents > 0 ? "responding" : "all clear"}
+          trendLabel="current status"
         />
 
         <StatCard
-          title="System Monitoring"
-          value="24/7"
+          title="System Status"
+          value="Operational"
           color="text-purple-500"
           icon={TrendingUp}
-          trend=""
-          trendLabel="All Systems Normal"
+          trend="24/7"
+          trendLabel="monitoring active"
         />
       </div>
 
@@ -92,12 +110,7 @@ export default function Dashboard() {
                 View All
               </button>
             </div>
-            <div className="space-y-2 text-sm text-slate-700">
-              <p>🌧️ Heavy rainfall predicted in North Region in the next 6 hours.</p>
-              <p>🚗 Spike in road accidents reported on Highway 12. 12 incidents in last 2 hours.</p>
-              <p>🏢 Possible building collapse risk detected in 3 structures. Priority inspection recommended.</p>
-              <p>📱 Social media alert: People trapped in subway near Central.</p>
-            </div>
+            <AIInsights incidents={stats.allIncidents} />
           </div>
         </div>
       </div>
@@ -117,73 +130,87 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="mt-4 text-sm text-slate-600">
-            <p className="font-semibold text-slate-900">1,248 Total Incidents</p>
+            <p className="font-semibold text-slate-900">{stats.totalIncidents} Total Incidents</p>
             <p>↑ 18% vs last 7 days</p>
           </div>
         </div>
 
         <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Task Overview</h2>
-          <div className="h-[200px] flex items-center justify-center relative">
-            <svg className="w-full h-full" viewBox="0 0 200 200">
-              <circle cx="100" cy="100" r="90" fill="none" stroke="#e2e8f0" strokeWidth="30" />
-              <circle
-                cx="100"
-                cy="100"
-                r="90"
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="30"
-                strokeDasharray="226 450"
-              />
-              <circle
-                cx="100"
-                cy="100"
-                r="90"
-                fill="none"
-                stroke="#f59e0b"
-                strokeWidth="30"
-                strokeDasharray="135 450"
-                strokeDashoffset="-226"
-              />
-              <text x="100" y="105" textAnchor="middle" fontSize="32" fontWeight="bold" fill="#1f2937">
-                684
-              </text>
-            </svg>
-            <div className="absolute text-center">
-              <p className="text-3xl font-bold text-slate-900">684</p>
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Incident Status</h2>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700">Active</span>
+              <span className="font-bold text-slate-900">{stats.activeIncidents}</span>
             </div>
-          </div>
-          <div className="mt-4 space-y-2 text-sm">
-            <p><span className="w-3 h-3 bg-emerald-500 rounded-full inline-block mr-2" />Completed: 212 (31%)</p>
-            <p><span className="w-3 h-3 bg-blue-500 rounded-full inline-block mr-2" />In Progress: 198 (29%)</p>
-            <p><span className="w-3 h-3 bg-orange-500 rounded-full inline-block mr-2" />Pending: 274 (40%)</p>
+            <div className="w-full bg-slate-200 rounded-full h-2">
+              <div
+                className="bg-red-500 h-2 rounded-full"
+                style={{
+                  width:
+                    stats.totalIncidents > 0
+                      ? `${(stats.activeIncidents / stats.totalIncidents) * 100}%`
+                      : "0%",
+                }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+              <span className="text-slate-700">Critical</span>
+              <span className="font-bold text-slate-900">{stats.criticalIncidents}</span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2">
+              <div
+                className="bg-orange-500 h-2 rounded-full"
+                style={{
+                  width:
+                    stats.totalIncidents > 0
+                      ? `${(stats.criticalIncidents / stats.totalIncidents) * 100}%`
+                      : "0%",
+                }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+              <span className="text-slate-700">Resolved</span>
+              <span className="font-bold text-slate-900">{stats.resolvedIncidents}</span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2">
+              <div
+                className="bg-green-500 h-2 rounded-full"
+                style={{
+                  width:
+                    stats.totalIncidents > 0
+                      ? `${(stats.resolvedIncidents / stats.totalIncidents) * 100}%`
+                      : "0%",
+                }}
+              />
+            </div>
           </div>
         </div>
 
         <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Volunteer Activity</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
             <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
               View All
             </button>
           </div>
           <div className="space-y-3">
-            {[
-              { name: "Sarah Johnson", role: "Flood Relief", location: "Downtown Area" },
-              { name: "Michael Chen", role: "Available for task", location: "Mobile Unit" },
-              { name: "David Wilson", role: "On a task", location: "Medical Support" },
-              { name: "Emily Davis", role: "Available for task", location: "Rescue Team B" },
-            ].map((volunteer) => (
-              <div key={volunteer.name} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-200 to-orange-200" />
+            {stats.allIncidents.slice(0, 4).map((incident) => (
+              <div key={incident.id} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-b-0">
+                <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">{volunteer.name}</p>
-                  <p className="text-xs text-slate-500">{volunteer.role}</p>
+                  <p className="text-sm font-medium text-slate-900 truncate">{incident.title}</p>
+                  <p className="text-xs text-slate-500">{incident.severity || "Medium"} severity</p>
                 </div>
-                <span className="text-xs text-slate-500 whitespace-nowrap">{volunteer.location}</span>
+                <span className="text-xs text-slate-500 whitespace-nowrap">
+                  {incident.status || "Investigating"}
+                </span>
               </div>
             ))}
+            {stats.allIncidents.length === 0 && (
+              <p className="text-sm text-slate-500 text-center py-4">No incidents yet</p>
+            )}
           </div>
         </div>
       </div>
