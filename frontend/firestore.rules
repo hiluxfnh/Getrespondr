@@ -66,5 +66,10 @@ service cloud.firestore {
       allow create: if signedIn();
       allow update, delete: if false;
     }
+
+    match /system_config/{configId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
   }
 }

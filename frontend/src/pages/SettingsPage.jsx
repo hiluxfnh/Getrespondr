@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, Save, ChevronRight, ShieldCheck, Users, UserCog, Clock3 } from 'lucide-react';
 import { useAuth } from '../firebase/auth';
+import ClimateAgentPanel from '../components/ClimateAgentPanel';
 
 export default function SettingsPage() {
   const { user, requestRole } = useAuth();
@@ -516,8 +517,14 @@ export default function SettingsPage() {
               </div>
             )}
 
+            {activeSection === 'integrations' && (
+              <div className="space-y-6">
+                <ClimateAgentPanel />
+              </div>
+            )}
+
             {/* Placeholder for other sections */}
-            {activeSection !== 'general' && (
+            {activeSection !== 'general' && activeSection !== 'integrations' && (
               <div className="bg-white rounded-lg shadow border border-slate-200 p-8 text-center">
                 <ChevronRight className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <p className="text-slate-600 text-lg font-medium">

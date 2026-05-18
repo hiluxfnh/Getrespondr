@@ -4,6 +4,7 @@ import StatCard from "../components/StatCard";
 import LiveMap from "../components/LiveMap";
 import IncidentFeed from "../components/IncidentFeed";
 import AIInsights from "../components/AIInsights";
+import ClimateAgentPanel from "../components/ClimateAgentPanel";
 import ActivityStream from "../components/ActivityStream";
 import {
   AlertTriangle,
@@ -79,6 +80,10 @@ export default function Dashboard() {
           trend="24/7"
           trendLabel="monitoring active"
         />
+      </div>
+
+      <div className="mb-8">
+        <ClimateAgentPanel />
       </div>
 
       {/* Map + Incident Feed */}

@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import SeverityBadge from "../components/SeverityBadge";
 import StatusBadge from "../components/StatusBadge";
+import AutoDetectBadge from "../components/AutoDetectBadge";
 import IncidentEditor from "../components/IncidentEditor";
 import { useAuth } from "../firebase/auth";
 import {
@@ -228,14 +229,30 @@ export default function IncidentDetails() {
           <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <h1 className="text-4xl font-bold text-slate-900">{incident.title}</h1>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-4xl font-bold text-slate-900">{incident.title}</h1>
+                  {incident.autoDetected ? <AutoDetectBadge /> : null}
+                </div>
                 <p className="mt-2 text-slate-500">
                   {incident.location} • Reported {formatTime(incident.timestamp || incident.time)}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
                   <span className="rounded-full bg-slate-100 px-3 py-1">Category: {incident.category || "Unknown"}</span>
                   <span className="rounded-full bg-slate-100 px-3 py-1">Source: {incident.source || incident.reportedBy}</span>
+                  {incident.sourceName ? (
+                    <span className="rounded-full bg-violet-100 px-3 py-1 text-violet-700">Feed: {incident.sourceName}</span>
+                  ) : null}
                 </div>
+                {incident.autoDetected && incident.sourceUrl ? (
+                  <a
+                    href={incident.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    View original source article →
+                  </a>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-3">

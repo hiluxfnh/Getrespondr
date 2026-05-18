@@ -1,6 +1,13 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+
 import DashboardLayout from "../layouts/DashboardLayout";
-import LiveMap from "../components/LiveMap";
+import LiveMap, { getIncidentCoords } from "../components/LiveMap";
 import SeverityBadge from "../components/SeverityBadge";
+import AutoDetectBadge from "../components/AutoDetectBadge";
+import ClimateAgentPanel from "../components/ClimateAgentPanel";
+import incidentsSeed from "../assets/incidents";
+import { listenToIncidents } from "../firebase/incidents";
 import {
   AlertTriangle,
   Filter,
@@ -14,87 +21,103 @@ import {
   Users,
 } from "lucide-react";
 
-const incidentCards = [
-  {
-    title: "Flooding in Downtown",
-    severity: "Critical",
-    time: "2 min ago",
-    location: "Downtown",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Building Collapse",
-    severity: "High",
-    time: "8 min ago",
-    location: "North District",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Road Accident - NH 12",
-    severity: "Medium",
-    time: "15 min ago",
-    location: "Highway NH-12",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Fire in Industrial Area",
-    severity: "High",
-    time: "25 min ago",
-    location: "Industrial Area",
-    icon: Flame,
-  },
-  {
-    title: "Medical Emergency",
-    severity: "Low",
-    time: "35 min ago",
-    location: "West Zone",
-    icon: ShieldCheck,
-  },
+const ALL_CATEGORIES = [
+  "Flood", "Fire", "Wildfire", "Heatwave", "Hurricane", "Drought",
+  "Earthquake", "Medical", "Accident", "Infrastructure Failure",
 ];
 
-const resourceStats = [
-  {
-    icon: Users,
-    label: "Volunteers",
-    value: "124",
-    sublabel: "Deployed",
-  },
-  {
-    icon: TentTree,
-    label: "Shelters",
-    value: "8",
-    sublabel: "Open",
-  },
-  {
-    icon: Truck,
-    label: "Supplies",
-    value: "812",
-    sublabel: "Units",
-  },
-];
+const SEVERITY_OPTIONS = ["Low", "Medium", "High", "Critical"];
 
-const incidentTypes = [
-  "All Types",
-  "Flood",
-  "Fire",
-  "Accident",
-  "Collapse",
-  "Medical",
-  "Power Outage",
-  "Other",
-];
+function formatTime(incident) {
+  if (typeof incident.timestamp?.toDate === "function") {
+    return incident.timestamp.toDate().toLocaleString();
+  }
+  return incident.time || "Recently";
+}
 
-const severityTypes = [
-  { label: "Low", color: "text-green-600" },
-  { label: "Medium", color: "text-amber-600" },
-  { label: "High", color: "text-orange-600" },
-  { label: "Critical", color: "text-red-600" },
-];
+function getCategoryIcon(category) {
+  switch (category) {
+    case "Fire":
+    case "Wildfire":
+      return Flame;
+    case "Earthquake":
+      return ShieldCheck;
+    default:
+      return AlertTriangle;
+  }
+}
 
 export default function LiveMapPage() {
+  const [incidents, setIncidents] = useState([]);
+  const [search, setSearch] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState(ALL_CATEGORIES);
+  const [selectedSeverities, setSelectedSeverities] = useState(SEVERITY_OPTIONS);
+  const [autoOnly, setAutoOnly] = useState(false);
+  const [mapStats, setMapStats] = useState({ onMap: 0, total: 0, autoDetected: 0 });
+
+  useEffect(() => {
+    const unsubscribe = listenToIncidents((next) => {
+      setIncidents(next.length ? next : incidentsSeed);
+    });
+    return unsubscribe;
+  }, []);
+
+  const filteredIncidents = useMemo(() => {
+    return incidents.filter((inc) => {
+      const location = inc.locationDetail || inc.location || "";
+      const matchesSearch =
+        !search ||
+        inc.title?.toLowerCase().includes(search.toLowerCase()) ||
+        location.toLowerCase().includes(search.toLowerCase()) ||
+        inc.category?.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = selectedCategories.includes(inc.category);
+      const matchesSeverity = selectedSeverities.includes(inc.severity);
+      const matchesAuto = !autoOnly || inc.autoDetected;
+      const hasCoords = Boolean(getIncidentCoords(inc));
+      return matchesSearch && matchesCategory && matchesSeverity && matchesAuto && hasCoords;
+    });
+  }, [incidents, search, selectedCategories, selectedSeverities, autoOnly]);
+
+  const mapFilters = useMemo(
+    () => ({
+      categories: selectedCategories,
+      severities: selectedSeverities,
+      autoOnly,
+    }),
+    [selectedCategories, selectedSeverities, autoOnly]
+  );
+
+  const toggleCategory = (category) => {
+    setSelectedCategories((current) =>
+      current.includes(category)
+        ? current.filter((item) => item !== category)
+        : [...current, category]
+    );
+  };
+
+  const toggleSeverity = (severity) => {
+    setSelectedSeverities((current) =>
+      current.includes(severity)
+        ? current.filter((item) => item !== severity)
+        : [...current, severity]
+    );
+  };
+
+  const resetFilters = () => {
+    setSelectedCategories(ALL_CATEGORIES);
+    setSelectedSeverities(SEVERITY_OPTIONS);
+    setAutoOnly(false);
+    setSearch("");
+  };
+
+  const autoDetectedCount = incidents.filter((inc) => inc.autoDetected).length;
+  const criticalCount = filteredIncidents.filter((inc) => inc.severity === "Critical").length;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <ClimateAgentPanel compact />
+
         <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
           <section className="space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
@@ -103,179 +126,89 @@ export default function LiveMapPage() {
                   <Search className="h-4 w-4 text-slate-400" />
                   <input
                     type="text"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search location, incident, resource..."
                     className="w-full bg-transparent outline-none text-slate-700 placeholder:text-slate-400"
                   />
                 </div>
 
-                <button className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
                   <Filter className="h-4 w-4" />
-                  Filters
+                  Reset
                 </button>
               </div>
             </div>
 
             <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
-              <div className="absolute left-4 top-4 z-[1000] flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur">
-                <button className="grid h-10 w-10 place-items-center rounded-xl text-slate-700 transition hover:bg-slate-100">
-                  <span className="text-2xl leading-none">+</span>
-                </button>
-                <button className="grid h-10 w-10 place-items-center rounded-xl text-slate-700 transition hover:bg-slate-100">
-                  <span className="text-2xl leading-none">−</span>
-                </button>
-                <button className="grid h-10 w-10 place-items-center rounded-xl text-slate-700 transition hover:bg-slate-100">
-                  <MapPin className="h-4 w-4" />
-                </button>
-                <button className="grid h-10 w-10 place-items-center rounded-xl text-slate-700 transition hover:bg-slate-100">
-                  <Layers3 className="h-4 w-4" />
-                </button>
+              <div className="h-[560px]">
+                <LiveMap filters={mapFilters} onIncidentsChange={setMapStats} />
               </div>
 
-              <div className="h-[560px]">
-                <LiveMap />
+              <div className="absolute left-4 top-4 z-[1000] rounded-2xl border border-slate-200 bg-white/95 px-4 py-2 text-sm shadow-lg backdrop-blur">
+                <span className="font-medium text-slate-900">{mapStats.onMap}</span>
+                <span className="text-slate-500"> on map</span>
+                {mapStats.autoDetected ? (
+                  <span className="ml-2 text-violet-600">· {mapStats.autoDetected} AI</span>
+                ) : null}
               </div>
 
               <div className="absolute bottom-4 left-4 z-[1000] flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-lg backdrop-blur">
-                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  Low
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-amber-700">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                  Medium
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-orange-700">
-                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
-                  High
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-red-700">
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                  Critical
-                </span>
-              </div>
-
-              <div className="absolute bottom-4 right-4 z-[1000] flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-700 shadow-lg backdrop-blur">
-                <span className="font-medium">1 km</span>
+                {SEVERITY_OPTIONS.map((severity) => {
+                  const colors = {
+                    Low: "bg-emerald-500",
+                    Medium: "bg-amber-500",
+                    High: "bg-orange-500",
+                    Critical: "bg-red-500",
+                  };
+                  return (
+                    <span key={severity} className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-slate-700">
+                      <span className={`h-2.5 w-2.5 rounded-full ${colors[severity]}`} />
+                      {severity}
+                    </span>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-slate-900">
-                    Live Incidents (5)
-                  </h2>
-
-                  <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                    View All Incidents
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-5 gap-3">
-                  {incidentCards.map((incident) => {
-                    const Icon = incident.icon;
-
-                    return (
-                      <article
-                        key={incident.title}
-                        className="rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:shadow-md"
-                      >
-                        <div className="mb-3 flex items-start justify-between gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm text-red-600">
-                            <Icon className="h-4 w-4" />
-                          </div>
-
-                          <SeverityBadge severity={incident.severity} />
-                        </div>
-
-                        <h3 className="text-sm font-semibold text-slate-900">
-                          {incident.title}
-                        </h3>
-
-                        <p className="mt-2 text-xs text-slate-500">
-                          {incident.time}
-                        </p>
-
-                        <p className="text-xs text-slate-600">{incident.location}</p>
-                      </article>
-                    );
-                  })}
-                </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-slate-900">
+                  Live Incidents ({filteredIncidents.length})
+                </h2>
+                <Link to="/incidents" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                  View All Incidents
+                </Link>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-slate-900">
-                    Resources
-                  </h2>
-
-                  <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                    View All Resources
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {resourceStats.map((stat) => {
-                    const Icon = stat.icon;
-
-                    return (
-                      <div
-                        key={stat.label}
-                        className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600">
-                            <Icon className="h-5 w-5" />
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-medium text-slate-900">
-                              {stat.label}
-                            </p>
-
-                            <p className="text-xs text-slate-500">
-                              {stat.sublabel}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <div className="text-2xl font-semibold text-slate-900">
-                            {stat.value}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-slate-900">
-                    Activity
-                  </h2>
-
-                  <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                    Latest Updates
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {[
-                    "Paramedic unit dispatched to Downtown",
-                    "Shelter occupancy updated for West Zone",
-                    "Road closure added near NH-12",
-                  ].map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3"
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {filteredIncidents.slice(0, 5).map((incident) => {
+                  const Icon = getCategoryIcon(incident.category);
+                  return (
+                    <Link
+                      key={incident.id}
+                      to={`/incidents/${incident.id}`}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:shadow-md"
                     >
-                      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-sky-500 shadow-[0_0_0_6px_rgba(14,165,233,0.12)]" />
-                      <p className="text-sm text-slate-700">{item}</p>
-                    </div>
-                  ))}
-                </div>
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm text-red-600">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <SeverityBadge severity={incident.severity} />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-slate-900 line-clamp-2">{incident.title}</h3>
+                        {incident.autoDetected ? <AutoDetectBadge compact /> : null}
+                      </div>
+                      <p className="mt-2 text-xs text-slate-500">{formatTime(incident)}</p>
+                      <p className="text-xs text-slate-600">{incident.locationDetail || incident.location}</p>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -283,30 +216,32 @@ export default function LiveMapPage() {
           <aside className="space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-slate-900">
-                  Map Filters
-                </h2>
-
-                <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                <h2 className="text-base font-semibold text-slate-900">Map Filters</h2>
+                <button type="button" onClick={resetFilters} className="text-sm font-medium text-blue-600 hover:text-blue-700">
                   Reset
                 </button>
               </div>
 
               <div className="space-y-5">
-                <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
-                    Incident Type
-                  </h3>
+                <label className="flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-800">
+                  <input
+                    type="checkbox"
+                    checked={autoOnly}
+                    onChange={(event) => setAutoOnly(event.target.checked)}
+                    className="h-4 w-4 rounded border-violet-300 text-violet-600 focus:ring-violet-500"
+                  />
+                  <span>AI auto-detected only ({autoDetectedCount})</span>
+                </label>
 
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">Incident Type</h3>
                   <div className="space-y-2 text-sm text-slate-700">
-                    {incidentTypes.map((item, index) => (
-                      <label
-                        key={item}
-                        className="flex items-center gap-2"
-                      >
+                    {ALL_CATEGORIES.map((item) => (
+                      <label key={item} className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          defaultChecked={index === 0}
+                          checked={selectedCategories.includes(item)}
+                          onChange={() => toggleCategory(item)}
                           className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
                         <span>{item}</span>
@@ -316,97 +251,47 @@ export default function LiveMapPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
-                    Severity
-                  </h3>
-
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">Severity</h3>
                   <div className="space-y-2 text-sm text-slate-700">
-                    {severityTypes.map((item) => (
-                      <label
-                        key={item.label}
-                        className="flex items-center gap-2"
-                      >
+                    {SEVERITY_OPTIONS.map((item) => (
+                      <label key={item} className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          defaultChecked
+                          checked={selectedSeverities.includes(item)}
+                          onChange={() => toggleSeverity(item)}
                           className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className={item.color}>{item.label}</span>
+                        <span>{item}</span>
                       </label>
                     ))}
                   </div>
                 </div>
-
-                <button className="w-full rounded-2xl bg-[#0D2A66] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#12357c]">
-                  Apply Filters
-                </button>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-slate-900">
-                  Cluster View
-                </h2>
-
-                <div className="h-6 w-11 rounded-full bg-blue-600 p-1">
-                  <div className="ml-auto h-4 w-4 rounded-full bg-white shadow" />
-                </div>
-              </div>
-
-              <div className="space-y-3 text-sm text-slate-700">
+              <h2 className="text-base font-semibold text-slate-900">Summary</h2>
+              <div className="mt-4 space-y-3 text-sm text-slate-700">
                 <div className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3">
                   <span>Critical incidents</span>
                   <span className="inline-flex items-center gap-2 text-red-600">
                     <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                    2
+                    {criticalCount}
                   </span>
                 </div>
-
                 <div className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3">
-                  <span>Active resources</span>
-                  <span className="inline-flex items-center gap-2 text-emerald-600">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    18
+                  <span>On map</span>
+                  <span className="inline-flex items-center gap-2 text-blue-600">
+                    <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                    {mapStats.onMap}
                   </span>
                 </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">
-                Legend
-              </h2>
-
-              <div className="mt-4 space-y-3 text-sm text-slate-700">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                  <span>Critical Incident</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Flame className="h-4 w-4 text-orange-500" />
-                  <span>High Severity Incident</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-amber-500" />
-                  <span>Medium Severity Incident</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                  <span>Resource Available</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Users className="h-4 w-4 text-blue-600" />
-                  <span>Team / Volunteer</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <TentTree className="h-4 w-4 text-violet-600" />
-                  <span>Shelter / Safe Zone</span>
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3">
+                  <span>AI auto-detected</span>
+                  <span className="inline-flex items-center gap-2 text-violet-600">
+                    <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+                    {autoDetectedCount}
+                  </span>
                 </div>
               </div>
             </div>

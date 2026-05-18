@@ -5,6 +5,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import incidentsSeed from "../assets/incidents";
 import SeverityBadge from "../components/SeverityBadge";
 import StatusBadge from "../components/StatusBadge";
+import AutoDetectBadge from "../components/AutoDetectBadge";
 import IncidentEditor from "../components/IncidentEditor";
 import { useAuth } from "../firebase/auth";
 import {
@@ -51,6 +52,7 @@ export default function Incidents() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -77,10 +79,14 @@ export default function Incidents() {
           incident.location.toLowerCase().includes(search.toLowerCase()) ||
           (incident.category || "").toLowerCase().includes(search.toLowerCase());
         const matchesStatus = statusFilter === "all" || incident.status === statusFilter;
+        const matchesSource =
+          sourceFilter === "all" ||
+          (sourceFilter === "auto" && incident.autoDetected) ||
+          (sourceFilter === "manual" && !incident.autoDetected);
 
-        return matchesSearch && matchesStatus;
+        return matchesSearch && matchesStatus && matchesSource;
       });
-  }, [incidents, search, statusFilter]);
+  }, [incidents, search, statusFilter, sourceFilter]);
 
   const handleCreate = async (values) => {
     try {
@@ -182,6 +188,15 @@ export default function Incidents() {
               <option value="Resolved">Resolved</option>
               <option value="Monitoring">Monitoring</option>
             </select>
+            <select
+              value={sourceFilter}
+              onChange={(event) => setSourceFilter(event.target.value)}
+              className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+            >
+              <option value="all">All sources</option>
+              <option value="auto">AI auto-detected</option>
+              <option value="manual">Manual reports</option>
+            </select>
             {canCreate ? (
               <button
                 type="button"
@@ -237,7 +252,10 @@ export default function Incidents() {
                     <tr key={incident.id} className="hover:bg-slate-50">
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-medium text-slate-900">{incident.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-slate-900">{incident.title}</p>
+                            {incident.autoDetected ? <AutoDetectBadge compact /> : null}
+                          </div>
                           <p className="text-xs text-slate-500">{incident.location}</p>
                         </div>
                       </td>

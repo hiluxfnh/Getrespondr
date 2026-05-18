@@ -18,7 +18,10 @@ const defaultValues = {
   recommendedAction: "",
 };
 
-const categoryOptions = ["Flood", "Fire", "Earthquake", "Medical", "Accident", "Infrastructure Failure"];
+const categoryOptions = [
+  "Flood", "Fire", "Earthquake", "Medical", "Accident", "Infrastructure Failure",
+  "Heatwave", "Wildfire", "Hurricane", "Drought",
+];
 const severityOptions = ["Low", "Medium", "High", "Critical"];
 const statusOptions = ["Active", "Investigating", "Resolved"];
 const sourceOptions = ["Human Report", "AI External Report", "Citizen Report", "Volunteer Report"];

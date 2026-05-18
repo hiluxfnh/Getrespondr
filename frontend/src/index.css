@@ -161,6 +161,26 @@
 		background: #ffb300;
 	}
 
+	.map-pin--low .map-pin__shape {
+		background: linear-gradient(135deg, #86efac, #22c55e);
+	}
+
+	.map-pin--low .map-pin__glow--outer,
+	.map-pin--low .map-pin__glow--mid,
+	.map-pin--low .map-pin__glow--inner {
+		background: #4ade80;
+	}
+
+	.map-pin--auto .map-pin__shape {
+		background: linear-gradient(135deg, #c4b5fd, #7c3aed);
+	}
+
+	.map-pin--auto .map-pin__glow--outer,
+	.map-pin--auto .map-pin__glow--mid,
+	.map-pin--auto .map-pin__glow--inner {
+		background: #8b5cf6;
+	}
+
 	.map-pin--team .map-pin__shape {
 		background: linear-gradient(135deg, #64b5f6, #1976d2);
 	}

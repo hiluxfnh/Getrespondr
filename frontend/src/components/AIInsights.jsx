@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
+import { AlertTriangle, Bot, CheckCircle2, Sparkles } from "lucide-react";
 
 function InsightCard({ title, description, tone = "blue" }) {
   const toneStyles = {
@@ -17,6 +17,7 @@ function InsightCard({ title, description, tone = "blue" }) {
 
 export default function AIInsights({ incidents = [] }) {
   const recent = incidents.slice(0, 3);
+  const autoDetected = incidents.filter((incident) => incident.autoDetected).length;
   const duplicateSignals = incidents.filter((incident) => (incident.aiDuplicateMatches || []).length > 0).length;
   const criticalSignals = incidents.filter((incident) => incident.severity === "Critical").length;
 
@@ -32,11 +33,16 @@ export default function AIInsights({ incidents = [] }) {
         </div>
       </div>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <InsightCard
           title="Live Incidents"
           description={`${incidents.length} incidents analyzed in realtime.`}
           tone="blue"
+        />
+        <InsightCard
+          title="Auto-detected"
+          description={`${autoDetected} climate incident${autoDetected === 1 ? "" : "s"} from trusted sources.`}
+          tone="emerald"
         />
         <InsightCard
           title="Critical Signals"
@@ -60,7 +66,9 @@ export default function AIInsights({ incidents = [] }) {
                   {incident.locationDetail || incident.location || "Unknown location"}
                 </p>
               </div>
-              {incident.severity === "Critical" ? (
+              {incident.autoDetected ? (
+                <Bot className="h-5 w-5 text-violet-300" />
+              ) : incident.severity === "Critical" ? (
                 <AlertTriangle className="h-5 w-5 text-red-300" />
               ) : (
                 <Sparkles className="h-5 w-5 text-blue-300" />
