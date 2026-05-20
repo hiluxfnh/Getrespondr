@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import StatCard from "../components/StatCard";
 import LiveMap from "../components/LiveMap";
 import IncidentFeed from "../components/IncidentFeed";
 import AIInsights from "../components/AIInsights";
 import ClimateAgentPanel from "../components/ClimateAgentPanel";
-import ActivityStream from "../components/ActivityStream";
 import {
   AlertTriangle,
   Users,
@@ -35,7 +35,7 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       {/* Stats Cards */}
-      <div className="grid grid-cols-5 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           title="Active Incidents"
           value={stats.activeIncidents.toString()}
@@ -87,8 +87,8 @@ export default function Dashboard() {
       </div>
 
       {/* Map + Incident Feed */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="col-span-2 bg-white rounded-2xl border border-slate-200 h-[450px] overflow-hidden shadow-sm">
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="min-h-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2 lg:h-[450px]">
           <div className="flex items-center justify-between p-4 border-b border-slate-200">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold text-slate-900">Live Incident Map</h2>
@@ -97,31 +97,35 @@ export default function Dashboard() {
                 Live
               </span>
             </div>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              Filters
-            </button>
+            <Link to="/live-map" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+              Open map filters
+            </Link>
           </div>
           <div className="h-[calc(100%-60px)]">
             <LiveMap />
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <IncidentFeed />
-          <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
+        <div className="flex min-h-0 flex-col gap-4">
+          <div className="min-h-0 max-h-[280px] overflow-hidden lg:max-h-none">
+            <IncidentFeed />
+          </div>
+          <div className="min-h-0 flex-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">AI Intelligence</h2>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              <Link to="/incidents" className="text-sm font-medium text-blue-600 hover:text-blue-700">
                 View All
-              </button>
+              </Link>
             </div>
-            <AIInsights incidents={stats.allIncidents} />
+            <div className="max-h-[320px] overflow-y-auto lg:max-h-none">
+              <AIInsights incidents={stats.allIncidents} compact />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Trends + Tasks + Activity */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-900">Incident Trends</h2>
@@ -196,9 +200,9 @@ export default function Dashboard() {
         <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/incidents" className="text-sm font-medium text-blue-600 hover:text-blue-700">
               View All
-            </button>
+            </Link>
           </div>
           <div className="space-y-3">
             {stats.allIncidents.slice(0, 4).map((incident) => (

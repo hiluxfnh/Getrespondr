@@ -7,6 +7,8 @@ import SeverityBadge from "../components/SeverityBadge";
 import StatusBadge from "../components/StatusBadge";
 import AutoDetectBadge from "../components/AutoDetectBadge";
 import IncidentEditor from "../components/IncidentEditor";
+import Modal from "../components/Modal";
+import { sortByRelevance } from "../utils/incidentRelevance";
 import { useAuth } from "../firebase/auth";
 import {
   createIncident,
@@ -71,7 +73,8 @@ export default function Incidents() {
   }, []);
 
   const displayIncidents = useMemo(() => {
-    return incidents
+    return sortByRelevance(
+      incidents
       .map(toDisplayIncident)
       .filter((incident) => {
         const matchesSearch =
@@ -85,7 +88,8 @@ export default function Incidents() {
           (sourceFilter === "manual" && !incident.autoDetected);
 
         return matchesSearch && matchesStatus && matchesSource;
-      });
+      })
+    );
   }, [incidents, search, statusFilter, sourceFilter]);
 
   const handleCreate = async (values) => {
@@ -200,10 +204,10 @@ export default function Incidents() {
             {canCreate ? (
               <button
                 type="button"
-                onClick={() => setShowCreate((current) => !current)}
+                onClick={() => setShowCreate(true)}
                 className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
               >
-                {showCreate ? "Close Form" : "New Incident"}
+                New Incident
               </button>
             ) : null}
           </div>
@@ -213,18 +217,21 @@ export default function Incidents() {
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : null}
 
-        {showCreate && canCreate ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-5 text-xl font-semibold text-slate-900">Create Incident</h2>
-            <IncidentEditor
-              referenceIncidents={incidents}
-              submitLabel="Create Incident"
-              busy={saving}
-              onSubmit={handleCreate}
-              onCancel={() => setShowCreate(false)}
-            />
-          </div>
-        ) : null}
+        <Modal
+          open={showCreate && canCreate}
+          onClose={() => setShowCreate(false)}
+          title="Create Incident"
+          description="Report a new incident with location, severity, and optional coordinates."
+          size="full"
+        >
+          <IncidentEditor
+            referenceIncidents={incidents}
+            submitLabel="Create Incident"
+            busy={saving}
+            onSubmit={handleCreate}
+            onCancel={() => setShowCreate(false)}
+          />
+        </Modal>
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">

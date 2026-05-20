@@ -1,4 +1,8 @@
+import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
+import Modal from "../components/Modal";
+import seedVolunteers from "../assets/seedVolunteers";
+import { createVolunteer, listenToVolunteers } from "../firebase/volunteers";
 import {
   Bell,
   CheckCircle2,
@@ -7,298 +11,234 @@ import {
   Download,
   Filter,
   Plus,
-  MapPin,
   Search,
   ShieldAlert,
   SquareActivity,
   Users,
 } from "lucide-react";
 
-const statCards = [
-  {
-    title: "Total Volunteers",
-    value: "5,432",
-    note: "+12% from last month",
-    icon: Users,
-    accent: "text-blue-600",
-    bg: "bg-blue-50",
-  },
-  {
-    title: "Available",
-    value: "3,892",
-    note: "71% of total",
-    icon: CheckCircle2,
-    accent: "text-emerald-600",
-    bg: "bg-emerald-50",
-  },
-  {
-    title: "On Duty",
-    value: "1,128",
-    note: "21% of total",
-    icon: Clock3,
-    accent: "text-orange-500",
-    bg: "bg-orange-50",
-  },
-  {
-    title: "Deployed",
-    value: "412",
-    note: "8% of total",
-    icon: SquareActivity,
-    accent: "text-violet-600",
-    bg: "bg-violet-50",
-  },
-  {
-    title: "Unavailable",
-    value: "1,724",
-    note: "↓ 31% of total",
-    icon: CircleSlash2,
-    accent: "text-red-600",
-    bg: "bg-red-50",
-  },
-];
+const STATUS_OPTIONS = ["Available", "On Duty", "Deployed", "Unavailable"];
+const TEAM_OPTIONS = ["Team Alpha", "Team Bravo", "Team Charlie", "Team Delta", "Team Echo"];
 
-const volunteers = [
-  {
-    name: "Sarah Johnson",
-    id: "VOL-10001",
-    email: "sarah.johnson@email.com",
-    phone: "+1 (555) 234-5678",
-    team: "Team Alpha",
-    skills: ["First Aid", "Search & Rescue"],
-    extraSkills: 2,
-    status: "Available",
-    availability: "Available Now",
-    lastActive: "5 min ago",
-    statusClass: "bg-emerald-50 text-emerald-600",
-    teamClass: "bg-blue-50 text-blue-600",
-  },
-  {
-    name: "Michael Chen",
-    id: "VOL-10002",
-    email: "michael.chen@email.com",
-    phone: "+1 (555) 456-7890",
-    team: "Team Bravo",
-    skills: ["Medical", "Logistics"],
-    extraSkills: 1,
-    status: "On Duty",
-    availability: "Until 6:00 PM",
-    lastActive: "1 hr ago",
-    statusClass: "bg-orange-50 text-orange-600",
-    teamClass: "bg-emerald-50 text-emerald-600",
-  },
-  {
-    name: "Emily Rodriguez",
-    id: "VOL-10003",
-    email: "emily.rodriguez@email.com",
-    phone: "+1 (555) 456-7890",
-    team: "Team Charlie",
-    skills: ["Communications", "Planning"],
-    extraSkills: 2,
-    status: "Deployed",
-    availability: "Deployment",
-    lastActive: "30 min ago",
-    statusClass: "bg-violet-50 text-violet-600",
-    teamClass: "bg-violet-50 text-violet-600",
-  },
-  {
-    name: "David Thompson",
-    id: "VOL-10004",
-    email: "david.thompson@email.com",
-    phone: "+1 (555) 567-8901",
-    team: "Team Delta",
-    skills: ["Driver", "Equipment"],
-    extraSkills: 1,
-    status: "Available",
-    availability: "Available Now",
-    lastActive: "2 hr ago",
-    statusClass: "bg-emerald-50 text-emerald-600",
-    teamClass: "bg-blue-50 text-blue-600",
-  },
-  {
-    name: "Lisa Patel",
-    id: "VOL-10005",
-    email: "lisa.patel@email.com",
-    phone: "+1 (555) 678-9012",
-    team: "Team Echo",
-    skills: ["First Aid", "Shelter Mgmt"],
-    extraSkills: 1,
-    status: "Unavailable",
-    availability: "Unavailable",
-    lastActive: "1 day ago",
-    statusClass: "bg-red-50 text-red-600",
-    teamClass: "bg-orange-50 text-orange-600",
-  },
-  {
-    name: "James Wilson",
-    id: "VOL-10006",
-    email: "james.wilson@email.com",
-    phone: "+1 (555) 789-0123",
-    team: "Team Alpha",
-    skills: ["Search & Rescue", "Rope Ops"],
-    extraSkills: 2,
-    status: "On Duty",
-    availability: "Until 10:00 PM",
-    lastActive: "45 min ago",
-    statusClass: "bg-orange-50 text-orange-600",
-    teamClass: "bg-blue-50 text-blue-600",
-  },
-  {
-    name: "Maria Garcia",
-    id: "VOL-10007",
-    email: "maria.garcia@email.com",
-    phone: "+1 (555) 890-1234",
-    team: "Team Bravo",
-    skills: ["Medical", "Mental Health"],
-    extraSkills: 1,
-    status: "Available",
-    availability: "Available Now",
-    lastActive: "10 min ago",
-    statusClass: "bg-emerald-50 text-emerald-600",
-    teamClass: "bg-emerald-50 text-emerald-600",
-  },
-  {
-    name: "Robert Kim",
-    id: "VOL-10008",
-    email: "robert.kim@email.com",
-    phone: "+1 (555) 901-2345",
-    team: "Team Charlie",
-    skills: ["Communications", "IT Support"],
-    extraSkills: 1,
-    status: "Deployed",
-    availability: "Deployment",
-    lastActive: "15 min ago",
-    statusClass: "bg-violet-50 text-violet-600",
-    teamClass: "bg-violet-50 text-violet-600",
-  },
-  {
-    name: "Jessica Lee",
-    id: "VOL-10009",
-    email: "jessica.lee@email.com",
-    phone: "+1 (555) 012-3456",
-    team: "Team Delta",
-    skills: ["Logistics", "Administration"],
-    extraSkills: 1,
-    status: "Unavailable",
-    availability: "Unavailable",
-    lastActive: "3 days ago",
-    statusClass: "bg-red-50 text-red-600",
-    teamClass: "bg-blue-50 text-blue-600",
-  },
-  {
-    name: "Daniel Brown",
-    id: "VOL-10010",
-    email: "daniel.brown@email.com",
-    phone: "+1 (555) 123-4567",
-    team: "Team Echo",
-    skills: ["Driver", "Heavy Equipment"],
-    extraSkills: 1,
-    status: "Available",
-    availability: "Available Now",
-    lastActive: "1 hr ago",
-    statusClass: "bg-emerald-50 text-emerald-600",
-    teamClass: "bg-orange-50 text-orange-600",
-  },
-];
+const statusStyles = {
+  Available: "bg-emerald-50 text-emerald-600",
+  "On Duty": "bg-orange-50 text-orange-600",
+  Deployed: "bg-violet-50 text-violet-600",
+  Unavailable: "bg-red-50 text-red-600",
+};
 
-const skillsBreakdown = [
-  { name: "First Aid", count: 1842, color: "bg-red-500" },
-  { name: "Search & Rescue", count: 1576, color: "bg-blue-500" },
-  { name: "Medical", count: 1223, color: "bg-emerald-500" },
-  { name: "Communications", count: 1098, color: "bg-violet-500" },
-  { name: "Logistics", count: 987, color: "bg-sky-500" },
-  { name: "Driver", count: 832, color: "bg-indigo-500" },
-  { name: "Shelter Management", count: 764, color: "bg-amber-500" },
-  { name: "Other Skills", count: 1345, color: "bg-slate-400" },
-];
+const teamStyles = {
+  "Team Alpha": "bg-blue-50 text-blue-600",
+  "Team Bravo": "bg-emerald-50 text-emerald-600",
+  "Team Charlie": "bg-violet-50 text-violet-600",
+  "Team Delta": "bg-blue-50 text-blue-600",
+  "Team Echo": "bg-orange-50 text-orange-600",
+};
 
-const certificationStatus = [
-  { label: "First Aid Certified", value: 82 },
-  { label: "CPR Certified", value: 74 },
-  { label: "Search & Rescue", value: 61 },
-  { label: "Bloodborne Pathogens", value: 58 },
-  { label: "ICS 100/200", value: 40 },
-];
+const emptyVolunteer = {
+  name: "",
+  email: "",
+  phone: "",
+  team: "Team Alpha",
+  skills: "",
+  status: "Available",
+  availability: "Available Now",
+};
 
-function VolunteerChart() {
-  const segments = [
-    { value: 71, color: "#22c55e" },
-    { value: 21, color: "#f59e0b" },
-    { value: 8, color: "#3b82f6" },
-    { value: 31, color: "#ef4444" },
-  ];
+function VolunteerForm({ values, onChange, onSubmit, busy, submitLabel }) {
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    onChange({ ...values, [name]: value });
+  };
 
-  const circumference = 2 * Math.PI * 56;
-  let offset = 0;
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <label className="block space-y-1.5">
+        <span className="text-sm font-medium text-slate-700">Full name</span>
+        <input name="name" value={values.name} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+      </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium text-slate-700">Email</span>
+          <input name="email" type="email" value={values.email} onChange={handleChange} required className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium text-slate-700">Phone</span>
+          <input name="phone" value={values.phone} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium text-slate-700">Team</span>
+          <select name="team" value={values.team} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
+            {TEAM_OPTIONS.map((team) => <option key={team} value={team}>{team}</option>)}
+          </select>
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium text-slate-700">Status</span>
+          <select name="status" value={values.status} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
+            {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+        </label>
+        <label className="block space-y-1.5 sm:col-span-2">
+          <span className="text-sm font-medium text-slate-700">Skills (comma-separated)</span>
+          <input name="skills" value={values.skills} onChange={handleChange} placeholder="First Aid, Logistics" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+        </label>
+        <label className="block space-y-1.5 sm:col-span-2">
+          <span className="text-sm font-medium text-slate-700">Availability</span>
+          <input name="availability" value={values.availability} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+        </label>
+      </div>
+      <button type="submit" disabled={busy} className="inline-flex items-center justify-center rounded-xl bg-[#0D2A66] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#12357c] disabled:opacity-60">
+        {busy ? "Saving..." : submitLabel}
+      </button>
+    </form>
+  );
+}
 
+function VolunteerChart({ total }) {
   return (
     <svg viewBox="0 0 160 160" className="mx-auto h-52 w-52">
       <circle cx="80" cy="80" r="56" stroke="#e2e8f0" strokeWidth="18" fill="none" />
-      {segments.map((segment) => {
-        const dash = (segment.value / 100) * circumference;
-        const node = (
-          <circle
-            key={segment.color}
-            cx="80"
-            cy="80"
-            r="56"
-            stroke={segment.color}
-            strokeWidth="18"
-            fill="none"
-            strokeDasharray={`${dash} ${circumference - dash}`}
-            strokeDashoffset={-offset}
-            strokeLinecap="round"
-          />
-        );
-        offset += dash;
-        return node;
-      })}
       <circle cx="80" cy="80" r="40" fill="white" />
-      <text x="80" y="78" textAnchor="middle" fontSize="22" fontWeight="700" fill="#1f2937">
-        5,432
-      </text>
-      <text x="80" y="98" textAnchor="middle" fontSize="10" fill="#64748b">
-        Total
-      </text>
+      <text x="80" y="78" textAnchor="middle" fontSize="22" fontWeight="700" fill="#1f2937">{total}</text>
+      <text x="80" y="98" textAnchor="middle" fontSize="10" fill="#64748b">Total</text>
     </svg>
   );
 }
 
 export default function Volunteers() {
+  const [volunteers, setVolunteers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState(emptyVolunteer);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
+
+  useEffect(() => {
+    const unsubscribe = listenToVolunteers(
+      (next) => setVolunteers(next.length ? next : seedVolunteers),
+      () => setVolunteers(seedVolunteers)
+    );
+    return unsubscribe;
+  }, []);
+
+  const displayVolunteers = useMemo(() => {
+    return volunteers
+      .map((volunteer, index) => ({
+        ...volunteer,
+        id: volunteer.id || `VOL-${10001 + index}`,
+        skills: Array.isArray(volunteer.skills)
+          ? volunteer.skills
+          : String(volunteer.skills || "").split(",").map((s) => s.trim()).filter(Boolean),
+        lastActive: volunteer.lastActive || "Recently",
+        statusClass: statusStyles[volunteer.status] || statusStyles.Available,
+        teamClass: teamStyles[volunteer.team] || teamStyles["Team Alpha"],
+      }))
+      .filter((volunteer) => {
+        const haystack = `${volunteer.name} ${volunteer.email} ${volunteer.id} ${volunteer.phone}`.toLowerCase();
+        const matchesSearch = !search || haystack.includes(search.toLowerCase());
+        const matchesStatus = statusFilter === "all" || volunteer.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      });
+  }, [volunteers, search, statusFilter]);
+
+  const pagedVolunteers = displayVolunteers.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const totalPages = Math.max(1, Math.ceil(displayVolunteers.length / rowsPerPage));
+
+  const statCards = useMemo(() => {
+    const total = volunteers.length;
+    const available = volunteers.filter((v) => v.status === "Available").length;
+    const onDuty = volunteers.filter((v) => v.status === "On Duty").length;
+    const deployed = volunteers.filter((v) => v.status === "Deployed").length;
+    const unavailable = volunteers.filter((v) => v.status === "Unavailable").length;
+    return [
+      { title: "Total Volunteers", value: String(total), note: "Registered in system", icon: Users, accent: "text-blue-600", bg: "bg-blue-50" },
+      { title: "Available", value: String(available), note: `${total ? Math.round((available / total) * 100) : 0}% of total`, icon: CheckCircle2, accent: "text-emerald-600", bg: "bg-emerald-50" },
+      { title: "On Duty", value: String(onDuty), note: "Currently assigned", icon: Clock3, accent: "text-orange-500", bg: "bg-orange-50" },
+      { title: "Deployed", value: String(deployed), note: "Field deployment", icon: SquareActivity, accent: "text-violet-600", bg: "bg-violet-50" },
+      { title: "Unavailable", value: String(unavailable), note: "Not reachable", icon: CircleSlash2, accent: "text-red-600", bg: "bg-red-50" },
+    ];
+  }, [volunteers]);
+
+  const handleCreate = async (event) => {
+    event.preventDefault();
+    try {
+      setSaving(true);
+      setError("");
+      const skills = String(form.skills).split(",").map((s) => s.trim()).filter(Boolean);
+      await createVolunteer({
+        ...form,
+        skills,
+        lastActive: "Just now",
+      });
+      setForm(emptyVolunteer);
+      setShowCreate(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleExport = () => {
+    const header = ["Name", "Email", "Phone", "Team", "Status", "Skills"];
+    const rows = displayVolunteers.map((v) => [
+      v.name,
+      v.email,
+      v.phone,
+      v.team,
+      v.status,
+      (v.skills || []).join("; "),
+    ]);
+    const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "volunteers.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Volunteers</h1>
-            <p className="mt-2 text-slate-500">
-              Manage volunteers, their availability, skills, and deployments
-            </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Volunteers</h1>
+            <p className="mt-2 text-slate-500">Manage volunteers, availability, skills, and deployments.</p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
-              <Filter className="h-4 w-4" />
-              Filters
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={() => setShowFilters((c) => !c)} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
+              <Filter className="h-4 w-4" /> Filters
             </button>
-
-            <button className="inline-flex items-center gap-2 rounded-xl bg-[#0D2A66] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#12357c]">
-              <Plus className="h-4 w-4" />
-              Add Volunteer
+            <button type="button" onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#0D2A66] px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-[#12357c]">
+              <Plus className="h-4 w-4" /> Add Volunteer
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-5 gap-4">
+        {showFilters ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm">
+              <option value="all">All statuses</option>
+              {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
+            </select>
+          </div>
+        ) : null}
+
+        {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {statCards.map((stat) => {
             const Icon = stat.icon;
-
             return (
               <div key={stat.title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className={`grid h-12 w-12 place-items-center rounded-2xl ${stat.bg}`}>
-                    <Icon className={`h-5 w-5 ${stat.accent}`} />
-                  </div>
-
+                  <div className={`grid h-12 w-12 place-items-center rounded-2xl ${stat.bg}`}><Icon className={`h-5 w-5 ${stat.accent}`} /></div>
                   <div>
                     <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
                     <p className="mt-1 text-sm font-medium text-slate-600">{stat.title}</p>
@@ -310,57 +250,16 @@ export default function Volunteers() {
           })}
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-6">
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
-              <div className="flex min-w-72 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-500">
-                <Search className="h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Search volunteers by name, email, ID, or phone..."
-                  className="w-full bg-transparent outline-none text-slate-700 placeholder:text-slate-400"
-                />
+              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
+                <Search className="h-4 w-4 shrink-0 text-slate-400" />
+                <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search volunteers..." className="min-w-0 w-full bg-transparent outline-none text-slate-700" />
               </div>
-
-              {["All Status", "All Skills", "All Teams", "All Certifications"].map((label) => (
-                <button
-                  key={label}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-                >
-                  {label}
-                  <span className="text-slate-400">▾</span>
-                </button>
-              ))}
-
-              <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
-                <Filter className="h-4 w-4" />
-                Filters
+              <button type="button" onClick={handleExport} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <Download className="h-4 w-4" /> Export
               </button>
-
-              <button className="inline-flex items-center gap-2 rounded-xl bg-[#0D2A66] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#12357c]">
-                <Plus className="h-4 w-4" />
-                Add Volunteer
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between px-5 py-4">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">All Volunteers</h2>
-                <p className="text-sm text-slate-500">Showing 1 to 10 of 5,432 volunteers</p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
-                  <Download className="h-4 w-4" />
-                  Export
-                </button>
-                <button className="rounded-xl bg-blue-600 p-2 text-white shadow-sm hover:bg-blue-700">
-                  <Users className="h-4 w-4" />
-                </button>
-                <button className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50">
-                  <ShieldAlert className="h-4 w-4" />
-                </button>
-              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -373,170 +272,67 @@ export default function Volunteers() {
                     <th className="px-4 py-4 font-semibold">Skills</th>
                     <th className="px-4 py-4 font-semibold">Status</th>
                     <th className="px-4 py-4 font-semibold">Availability</th>
-                    <th className="px-4 py-4 font-semibold">Last Active</th>
-                    <th className="px-4 py-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
-
                 <tbody>
-                  {volunteers.map((volunteer) => (
+                  {pagedVolunteers.map((volunteer) => (
                     <tr key={volunteer.id} className="border-b border-slate-100 hover:bg-slate-50/60">
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-11 w-11 rounded-full bg-gradient-to-br from-amber-200 via-orange-100 to-amber-400 p-[2px]">
-                            <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-sm font-semibold text-slate-700">
-                              {volunteer.name
-                                .split(" ")
-                                .map((part) => part[0])
-                                .join("")}
-                            </div>
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-900">{volunteer.name}</p>
-                            <p className="text-xs text-slate-500">ID: {volunteer.id}</p>
-                          </div>
-                        </div>
+                        <p className="font-semibold text-slate-900">{volunteer.name}</p>
+                        <p className="text-xs text-slate-500">ID: {volunteer.id}</p>
                       </td>
-
                       <td className="px-4 py-4">
                         <p className="text-slate-600">{volunteer.email}</p>
                         <p className="text-xs text-slate-500">{volunteer.phone}</p>
                       </td>
-
                       <td className="px-4 py-4">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${volunteer.teamClass}`}>
-                          {volunteer.team}
-                        </span>
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${volunteer.teamClass}`}>{volunteer.team}</span>
                       </td>
-
                       <td className="px-4 py-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {volunteer.skills.map((skill) => (
-                            <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                              {skill}
-                            </span>
+                        <div className="flex flex-wrap gap-1">
+                          {(volunteer.skills || []).slice(0, 2).map((skill) => (
+                            <span key={skill} className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">{skill}</span>
                           ))}
-                          {volunteer.extraSkills > 0 ? (
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
-                              +{volunteer.extraSkills}
-                            </span>
-                          ) : null}
                         </div>
                       </td>
-
                       <td className="px-4 py-4">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${volunteer.statusClass}`}>
-                          {volunteer.status}
-                        </span>
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${volunteer.statusClass}`}>{volunteer.status}</span>
                       </td>
-
                       <td className="px-4 py-4 text-slate-600">{volunteer.availability}</td>
-
-                      <td className="px-4 py-4 text-slate-500">{volunteer.lastActive}</td>
-
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2 text-slate-400">
-                          <button className="rounded-lg border border-slate-200 p-2 hover:bg-slate-50">
-                            <Bell className="h-4 w-4" />
-                          </button>
-                          <button className="rounded-lg border border-slate-200 p-2 hover:bg-slate-50">
-                            <Clock3 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4 text-sm text-slate-500">
-              <p>Showing 1 to 10 of 5,432 volunteers</p>
-
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-500">
+              <p>Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, displayVolunteers.length)} of {displayVolunteers.length}</p>
               <div className="flex items-center gap-2">
-                <button className="rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">1</button>
-                <button className="rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">2</button>
-                <button className="rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">3</button>
-                <span>...</span>
-                <button className="rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">544</button>
-                <button className="rounded-lg border border-slate-200 p-2 hover:bg-slate-50">
-                  <MapPin className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span>Rows per page:</span>
-                <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">
-                  10
-                  <span className="text-slate-400">▾</span>
-                </button>
+                <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-lg border border-slate-200 px-3 py-2 disabled:opacity-40">Prev</button>
+                <span>{page} / {totalPages}</span>
+                <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-slate-200 px-3 py-2 disabled:opacity-40">Next</button>
               </div>
             </div>
           </div>
 
           <aside className="space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Volunteer Overview</h2>
-                <button className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</button>
-              </div>
-
-              <VolunteerChart />
-
-              <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <p className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />Available 3,892 (71%)</p>
-                <p className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" />On Duty 1,128 (21%)</p>
-                <p className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-violet-500" />Deployed 412 (8%)</p>
-                <p className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-red-500" />Unavailable 1,724 (31%)</p>
-              </div>
+              <h2 className="text-lg font-semibold text-slate-900">Volunteer Overview</h2>
+              <VolunteerChart total={volunteers.length} />
             </div>
-
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Skills Breakdown</h2>
-                <button className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</button>
-              </div>
-
-              <div className="space-y-3">
-                {skillsBreakdown.map((skill) => (
-                  <div key={skill.name} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-3">
-                      <span className={`h-2.5 w-2.5 rounded-full ${skill.color}`} />
-                      <span className="text-slate-700">{skill.name}</span>
-                    </div>
-                    <span className="text-slate-500">{skill.count.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Certification Status</h2>
-                <button className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</button>
-              </div>
-
-              <div className="space-y-3">
-                {certificationStatus.map((item) => (
-                  <div key={item.label}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-slate-700">{item.label}</span>
-                      <span className="text-slate-500">{item.value}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-slate-100">
-                      <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${item.value}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button className="mt-5 w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100">
-                Manage Skills & Certifications
+              <button type="button" onClick={() => setShowCreate(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+                <ShieldAlert className="h-4 w-4" /> Assign to Incident
               </button>
+              <p className="mt-2 text-center text-xs text-slate-500">Opens volunteer registration — link volunteers to incidents from incident details.</p>
             </div>
           </aside>
         </div>
       </div>
+
+      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Add Volunteer" description="Register a new volunteer for deployment." size="lg">
+        <VolunteerForm values={form} onChange={setForm} onSubmit={handleCreate} busy={saving} submitLabel="Add Volunteer" />
+      </Modal>
     </DashboardLayout>
   );
 }

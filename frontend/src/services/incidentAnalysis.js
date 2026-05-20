@@ -1,4 +1,8 @@
+import { applyRecencyToMatchScore, getIncidentAgeDays, sortByRelevance } from "../utils/incidentRelevance";
+
 const DEFAULT_MODEL = "gemini-1.5-flash";
+const DUPLICATE_MATCH_THRESHOLD = 0.45;
+const MAX_REFERENCE_AGE_DAYS = 60;
 
 function normalizeText(value) {
   return String(value || "")
@@ -84,18 +88,21 @@ function buildDuplicateMatches(incident, referenceIncidents = []) {
 
   return referenceIncidents
     .filter((item) => String(item?.id) !== String(incident?.id))
+    .filter((item) => getIncidentAgeDays(item) <= MAX_REFERENCE_AGE_DAYS)
     .map((item) => {
       const sourceText = `${item.title || ""} ${item.description || ""} ${item.location || item.locationDetail || ""}`;
-      const score = scoreSimilarity(targetText, sourceText);
+      const baseScore = scoreSimilarity(targetText, sourceText);
+      const score = applyRecencyToMatchScore(baseScore, item);
 
       return {
         id: item.id,
         title: item.title || "Untitled incident",
         location: item.location || item.locationDetail || "Unknown location",
         score,
+        ageDays: Math.round(getIncidentAgeDays(item)),
       };
     })
-    .filter((item) => item.score >= 0.45)
+    .filter((item) => item.score >= DUPLICATE_MATCH_THRESHOLD)
     .sort((left, right) => right.score - left.score)
     .slice(0, 3);
 }
@@ -142,7 +149,8 @@ async function analyzeWithGemini(incident, referenceIncidents) {
   }
 
   const model = import.meta.env.VITE_GEMINI_MODEL || DEFAULT_MODEL;
-  const referenceSummary = referenceIncidents
+  const referenceSummary = sortByRelevance(referenceIncidents)
+    .filter((item) => getIncidentAgeDays(item) <= MAX_REFERENCE_AGE_DAYS)
     .slice(0, 5)
     .map((item) => `- ${item.title || "Untitled"} | ${item.location || item.locationDetail || "Unknown location"} | ${item.description || "No description"}`)
     .join("\n");

@@ -1,0 +1,32 @@
+export default [
+  {
+    name: "Sarah Johnson",
+    email: "sarah.johnson@email.com",
+    phone: "+1 (555) 234-5678",
+    team: "Team Alpha",
+    skills: ["First Aid", "Search & Rescue"],
+    status: "Available",
+    availability: "Available Now",
+    lastActive: "5 min ago",
+  },
+  {
+    name: "Michael Chen",
+    email: "michael.chen@email.com",
+    phone: "+1 (555) 456-7890",
+    team: "Team Bravo",
+    skills: ["Medical", "Logistics"],
+    status: "On Duty",
+    availability: "Until 6:00 PM",
+    lastActive: "1 hr ago",
+  },
+  {
+    name: "Emily Rodriguez",
+    email: "emily.rodriguez@email.com",
+    phone: "+1 (555) 456-7890",
+    team: "Team Charlie",
+    skills: ["Communications", "Planning"],
+    status: "Deployed",
+    availability: "Deployment",
+    lastActive: "30 min ago",
+  },
+];

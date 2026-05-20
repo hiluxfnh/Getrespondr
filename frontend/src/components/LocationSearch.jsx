@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MapPin, X, Search } from "lucide-react";
 import geocodeService from "../services/geocodeService";
+import { formatCoordinate } from "../utils/coordinates";
 
 export default function LocationSearch({
   value = "",
@@ -14,6 +15,10 @@ export default function LocationSearch({
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    setSearchTerm(value);
+  }, [value]);
 
   // Debounced search
   useEffect(() => {
@@ -130,14 +135,14 @@ export default function LocationSearch({
         </div>
       )}
 
-      {latitude && longitude && (
+      {formatCoordinate(latitude) && formatCoordinate(longitude) ? (
         <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-          <p className="font-medium">📍 Selected Location</p>
+          <p className="font-medium">Selected location</p>
           <p className="text-xs mt-1">
-            {latitude.toFixed(4)}, {longitude.toFixed(4)}
+            {formatCoordinate(latitude)}, {formatCoordinate(longitude)}
           </p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

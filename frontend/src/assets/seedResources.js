@@ -1,0 +1,38 @@
+export default [
+  {
+    name: "Medical Kits",
+    type: "Supplies",
+    category: "Medical",
+    quantity: 320,
+    available: 120,
+    location: "Warehouse 1",
+    status: "Available",
+  },
+  {
+    name: "Water Bottles (1L)",
+    type: "Supplies",
+    category: "Essentials",
+    quantity: 1200,
+    available: 850,
+    location: "Warehouse 1",
+    status: "Available",
+  },
+  {
+    name: "Blankets",
+    type: "Supplies",
+    category: "Shelter",
+    quantity: 500,
+    available: 200,
+    location: "Warehouse 1",
+    status: "Low Stock",
+  },
+  {
+    name: "Ambulances",
+    type: "Vehicle",
+    category: "Medical",
+    quantity: 12,
+    available: 5,
+    location: "Central Depot",
+    status: "In Use",
+  },
+];

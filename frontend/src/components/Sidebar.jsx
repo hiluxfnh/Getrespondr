@@ -15,6 +15,7 @@ import {
 } from "react-router-dom";
 
 import { useAuth } from "../firebase/auth";
+import { useLayout } from "../layouts/DashboardLayout";
 
 const menuItems = [
   {
@@ -75,9 +76,15 @@ const menuItems = [
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { sidebarOpen, setSidebarOpen } = useLayout();
 
   return (
-    <aside aria-label="Primary navigation" className="fixed left-0 top-0 z-50 w-64 h-screen bg-[#071936] text-white flex flex-col shadow-[18px_0_40px_rgba(2,6,23,0.35)]">
+    <aside
+      aria-label="Primary navigation"
+      className={`fixed left-0 top-0 z-50 flex h-screen w-64 max-w-[85vw] flex-col bg-[#071936] text-white shadow-[18px_0_40px_rgba(2,6,23,0.35)] transition-transform duration-200 lg:translate-x-0 ${
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
       <NavLink to="/" className="px-5 py-5 text-2xl font-bold border-b border-white/10 flex items-center gap-3 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-sky-400/70">
         <div className="grid h-9 w-9 place-items-center rounded-2xl border border-white/10 bg-white/5">
           <span className="text-sm font-black">+</span>
@@ -93,6 +100,7 @@ export default function Sidebar() {
           <NavLink
             key={index}
             to={item.path}
+            onClick={() => setSidebarOpen(false)}
             className={({ isActive }) =>
               `w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl transition focus:outline-none focus:ring-2 focus:ring-sky-400/70 ${
                 isActive

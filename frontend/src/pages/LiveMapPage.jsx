@@ -8,6 +8,7 @@ import AutoDetectBadge from "../components/AutoDetectBadge";
 import ClimateAgentPanel from "../components/ClimateAgentPanel";
 import incidentsSeed from "../assets/incidents";
 import { listenToIncidents } from "../firebase/incidents";
+import { sortByRelevance } from "../utils/incidentRelevance";
 import {
   AlertTriangle,
   Filter,
@@ -63,19 +64,21 @@ export default function LiveMapPage() {
   }, []);
 
   const filteredIncidents = useMemo(() => {
-    return incidents.filter((inc) => {
-      const location = inc.locationDetail || inc.location || "";
-      const matchesSearch =
-        !search ||
-        inc.title?.toLowerCase().includes(search.toLowerCase()) ||
-        location.toLowerCase().includes(search.toLowerCase()) ||
-        inc.category?.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = selectedCategories.includes(inc.category);
-      const matchesSeverity = selectedSeverities.includes(inc.severity);
-      const matchesAuto = !autoOnly || inc.autoDetected;
-      const hasCoords = Boolean(getIncidentCoords(inc));
-      return matchesSearch && matchesCategory && matchesSeverity && matchesAuto && hasCoords;
-    });
+    return sortByRelevance(
+      incidents.filter((inc) => {
+        const location = inc.locationDetail || inc.location || "";
+        const matchesSearch =
+          !search ||
+          inc.title?.toLowerCase().includes(search.toLowerCase()) ||
+          location.toLowerCase().includes(search.toLowerCase()) ||
+          inc.category?.toLowerCase().includes(search.toLowerCase());
+        const matchesCategory = selectedCategories.includes(inc.category);
+        const matchesSeverity = selectedSeverities.includes(inc.severity);
+        const matchesAuto = !autoOnly || inc.autoDetected;
+        const hasCoords = Boolean(getIncidentCoords(inc));
+        return matchesSearch && matchesCategory && matchesSeverity && matchesAuto && hasCoords;
+      })
+    );
   }, [incidents, search, selectedCategories, selectedSeverities, autoOnly]);
 
   const mapFilters = useMemo(
@@ -118,7 +121,7 @@ export default function LiveMapPage() {
       <div className="space-y-6">
         <ClimateAgentPanel compact />
 
-        <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
           <section className="space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
               <div className="flex items-center gap-3">

@@ -20,10 +20,12 @@ import {
 import { useEffect, useState } from "react";
 import { useAuth } from "../firebase/auth";
 import { listenToNotifications } from "../firebase/notifications";
+import { useLayout } from "../layouts/DashboardLayout";
 
 export default function Topbar() {
   const { pathname } = useLocation();
   const { user, requestRole } = useAuth();
+  const { toggleSidebar } = useLayout();
   const [selectedRole, setSelectedRole] = useState("Volunteer");
   const [requestMessage, setRequestMessage] = useState("");
   const [notificationCount, setNotificationCount] = useState(0);
@@ -124,12 +126,13 @@ export default function Topbar() {
   }, [user]);
 
   return (
-    <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-40" role="banner">
-      <div className="flex min-w-0 items-center gap-4 flex-1">
+    <header className="sticky top-0 z-40 flex h-auto min-h-20 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6 lg:px-8" role="banner">
+      <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
         <button
           type="button"
           aria-label="Open navigation menu"
-          className="p-2 hover:bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/70"
+          onClick={toggleSidebar}
+          className="rounded-lg p-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/70 lg:hidden"
         >
           <Menu size={20} className="text-slate-700" />
         </button>
@@ -141,7 +144,7 @@ export default function Topbar() {
         </div>
       </div>
 
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
         <Link
           to="/"
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500/70"
@@ -198,23 +201,20 @@ export default function Topbar() {
           </div>
         )}
 
-        <button type="button" className="relative p-2 hover:bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/70" aria-label="Notifications">
+        <Link to="/notifications" className="relative rounded-lg p-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/70" aria-label="Notifications">
           <Bell size={20} className="text-slate-600" />
           {notificationCount > 0 ? (
             <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
               {notificationCount > 9 ? "9+" : notificationCount}
             </span>
           ) : null}
-        </button>
+        </Link>
 
-        <button type="button" className="relative p-2 hover:bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/70" aria-label="Messages">
+        <Link to="/messages" className="relative rounded-lg p-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/70" aria-label="Messages">
           <MessageCircle size={20} className="text-slate-600" />
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            2
-          </span>
-        </button>
+        </Link>
 
-        <div className="border-l border-slate-200 px-4 flex items-center gap-3">
+        <div className="hidden items-center gap-3 border-l border-slate-200 px-4 md:flex">
           <div className="text-right">
             <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
               <CloudRain size={16} className="text-blue-500" />
@@ -226,7 +226,7 @@ export default function Topbar() {
           </div>
         </div>
 
-        <div className="border-l border-slate-200 pl-4 flex items-center gap-3">
+        <div className="hidden items-center gap-3 border-l border-slate-200 pl-4 sm:flex">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
             <div>

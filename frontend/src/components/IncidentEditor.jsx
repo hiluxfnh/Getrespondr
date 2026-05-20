@@ -3,6 +3,7 @@ import { AlertTriangle, Loader, Sparkles, Upload, X } from "lucide-react";
 import cloudinaryService from "../services/cloudinaryService";
 import LocationSearch from "./LocationSearch";
 import { analyzeIncident, formatDuplicateSummary } from "../services/incidentAnalysis";
+import { validateCoordinates } from "../utils/coordinates";
 
 const defaultValues = {
   title: "",
@@ -53,6 +54,7 @@ export default function IncidentEditor({
   const [analysis, setAnalysis] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
+  const [coordError, setCoordError] = useState("");
 
   useEffect(() => {
     setForm({ ...defaultValues, ...initialValues });
@@ -110,6 +112,9 @@ export default function IncidentEditor({
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+    if (name === "latitude" || name === "longitude") {
+      setCoordError("");
+    }
   };
 
   const handleImageSelect = async (event) => {
@@ -153,10 +158,18 @@ export default function IncidentEditor({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    const coordCheck = validateCoordinates(form.latitude, form.longitude);
+    if (!coordCheck.valid) {
+      setCoordError(coordCheck.error);
+      return;
+    }
+
+    setCoordError("");
     await onSubmit({
       ...form,
-      latitude: form.latitude === "" ? "" : Number(form.latitude),
-      longitude: form.longitude === "" ? "" : Number(form.longitude),
+      latitude: coordCheck.latitude ?? "",
+      longitude: coordCheck.longitude ?? "",
       imageUrl: imageUrl || undefined,
     });
   };
@@ -243,11 +256,11 @@ export default function IncidentEditor({
           </select>
         </Field>
 
-        <Field label="Latitude">
+        <Field label="Latitude" hint="Decimal degrees, -90 to 90. Leave empty if unknown.">
           <input
             name="latitude"
-            type="number"
-            step="any"
+            type="text"
+            inputMode="decimal"
             value={form.latitude}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
@@ -255,11 +268,11 @@ export default function IncidentEditor({
           />
         </Field>
 
-        <Field label="Longitude">
+        <Field label="Longitude" hint="Decimal degrees, -180 to 180. Use negative values for west.">
           <input
             name="longitude"
-            type="number"
-            step="any"
+            type="text"
+            inputMode="decimal"
             value={form.longitude}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
@@ -267,6 +280,12 @@ export default function IncidentEditor({
           />
         </Field>
       </div>
+
+      {coordError ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {coordError}
+        </div>
+      ) : null}
 
       <Field label="Description">
         <textarea
@@ -324,7 +343,10 @@ export default function IncidentEditor({
                   {analysis.duplicateMatches.map((match) => (
                     <div key={match.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
                       <p className="font-medium text-slate-900">{match.title}</p>
-                      <p className="text-xs text-slate-500">{match.location} • Match score {Math.round((match.score || 0) * 100)}%</p>
+                      <p className="text-xs text-slate-500">
+                        {match.location} • Match {Math.round((match.score || 0) * 100)}%
+                        {typeof match.ageDays === "number" ? ` • ${match.ageDays}d ago` : ""}
+                      </p>
                     </div>
                   ))}
                 </div>

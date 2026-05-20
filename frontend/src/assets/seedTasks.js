@@ -1,0 +1,38 @@
+export default [
+  {
+    title: "Assign medics to North Zone",
+    owner: "Sarah Johnson",
+    status: "Backlog",
+    priority: "High",
+    zone: "North Zone",
+    due: "Today, 3:30 PM",
+    tag: "High priority",
+  },
+  {
+    title: "Deploy rescue unit to Highway 12",
+    owner: "David Wilson",
+    status: "In Progress",
+    priority: "Critical",
+    zone: "Highway 12",
+    due: "In 40 mins",
+    tag: "Live response",
+  },
+  {
+    title: "Validate road closure notices",
+    owner: "Alex Morgan",
+    status: "Review",
+    priority: "Medium",
+    zone: "Central",
+    due: "This evening",
+    tag: "Approvals",
+  },
+  {
+    title: "Brief fire response team",
+    owner: "Ops Center",
+    status: "Completed",
+    priority: "High",
+    zone: "East Sector",
+    due: "Completed 12 min ago",
+    tag: "Done",
+  },
+];
