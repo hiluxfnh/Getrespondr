@@ -100,7 +100,7 @@ function createMarkerIcon({ icon: Icon, tone, pulse = true, scale = 1, size }) {
   return L.divIcon({
     className: "",
     html: `
-      <div class="map-pin map-pin--${tone} ${pulse ? "map-pin--pulse" : ""}" style="--map-pin-scale: ${scale}; --map-pin-width: ${size?.width ?? 64}px; --map-pin-height: ${size?.height ?? 80}px;">
+      <div class="map-pin map-pin--${tone.toLowerCase()} ${pulse ? "map-pin--pulse" : ""}" style="--map-pin-scale: ${scale}; --map-pin-width: ${size?.width ?? 64}px; --map-pin-height: ${size?.height ?? 80}px;">
         <div class="map-pin__glow map-pin__glow--outer"></div>
         <div class="map-pin__glow map-pin__glow--mid"></div>
         <div class="map-pin__glow map-pin__glow--inner"></div>
@@ -228,7 +228,7 @@ function MapMarkerLayer({ filters, onIncidentsChange }) {
           position={incident.position}
           icon={createMarkerIcon({
             icon: incident.icon,
-            tone: incident.tone,
+            tone: incident.severity,
             scale: zoomScale,
             size: markerSize,
           })}
